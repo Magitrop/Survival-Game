@@ -29,6 +29,28 @@ namespace Game.Miscellaneous
 
 	public static class Items
     {
+		public static Item GetItemByID(int itemID)
+        {
+			switch (itemID)
+			{
+				case 1: return ItemWoodenLog.Instance;
+				case 2: return ItemWoodenFence.Instance;
+				case 3: return ItemWoodenFenceGate.Instance;
+				default: return null;
+			};
+		}
+
+		public static Item GetItemByName(string itemName)
+		{
+			switch (itemName)
+			{
+				case "item_wooden_log": return ItemWoodenLog.Instance;
+				case "item_wooden_fence": return ItemWoodenFence.Instance;
+				case "item_wooden_fence_gate": return ItemWoodenFenceGate.Instance;
+				default: return null;
+			};
+		}
+
 		public sealed class ItemWoodenLog : Item
         {
 			// singleton
@@ -84,6 +106,41 @@ namespace Game.Miscellaneous
 					return false;
 
 				placeAt.SetGameObject(GameObject.Spawn("obj_wall", placeAt.globalX, placeAt.globalY));
+				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
+				return true;
+			}
+		}
+		public sealed class ItemWoodenFenceGate : Item
+		{
+			// singleton
+			private ItemWoodenFenceGate()
+			{
+				itemID = 3;
+				itemName = "item_wooden_fence_gate";
+				itemSrcRect = new Rectangle(32, 0, 16, 16);
+
+				isPlaceable = true;
+				isConsumable = false;
+				maxStackQuantity = 100;
+			}
+			private static ItemWoodenFenceGate instance;
+			public static ItemWoodenFenceGate Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemWoodenFenceGate();
+					return instance;
+				}
+			}
+
+			public override bool OnItemPlacing(Tile placeAt)
+			{
+				// нельзя ставить в воде
+				if (placeAt.tileType < 2)
+					return false;
+
+				placeAt.SetGameObject(GameObject.Spawn("obj_fence_gate", placeAt.globalX, placeAt.globalY));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}

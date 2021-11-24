@@ -46,23 +46,22 @@ namespace Game.Controllers
 		/// Объект, который сейчас совершает свой ход.
 		/// </summary>
 		public TurnBasedObject currentObject
-        {
-            get
-            {
+		{
+			get
+			{
 				return 
 					(objectsQueue.Count > 0 && 
 					currentObjectIndex >= 0 && 
 					currentObjectIndex < objectsQueue.Count) 
 					? objectsQueue[currentObjectIndex] 
 					: null;
-            }
-        }
+			}
+		}
 		public int currentObjectIndex;
 		public GameObject mainHero;
 
 		public string currentSavePath;
 		public List<SavedChunkInfo> savedChunks;
-
 		public float pause { get; private set; }
 
 		public int currentFPS;
@@ -84,8 +83,8 @@ namespace Game.Controllers
 			MapController.Instance.Start();
 			InventoryController.Instance.Start();
 
-			if (!LoadGame("save1"))
-            {
+			if (!LoadGame("save"))
+			{
 				int playerX = 0;
 				int playerY = 0;
 				mainHero = GameObject.Spawn("creature_hero", playerX, playerY);
@@ -100,16 +99,16 @@ namespace Game.Controllers
 		}
 
 		public void NextTurn()
-        {
+		{
 			currentObject?.OnTurnEnd();
 			currentObjectIndex = currentObjectIndex < objectsQueue.Count - 1 ? currentObjectIndex + 1 : 0;
 			currentObject?.OnTurnStart();
 		}
 
 		public void SetPause(float duration)
-        {
+		{
 			pause = duration;
-        }
+		}
 
 		/// <summary>
 		/// Вызывает в игровых объектах все методы, которые должны выполняться каждый кадр.
@@ -174,10 +173,18 @@ namespace Game.Controllers
 									InventoryController.Instance.currentSlot, 
 									InventoryController.Instance.currentSlot.currentItem, 1);
 					}
-					src = new Rectangle(7 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION);
+					src = new Rectangle(
+						7 * Constants.TEXTURE_RESOLUTION, 
+						2 * Constants.TEXTURE_RESOLUTION, 
+						Constants.TEXTURE_RESOLUTION, 
+						Constants.TEXTURE_RESOLUTION);
 				}
-				else src = new Rectangle(8 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION);
-				if (InventoryController.Instance.currentSlot.currentItem != null || (selectedTile.gameObject as Creature) != null)
+				else src = new Rectangle(
+					8 * Constants.TEXTURE_RESOLUTION, 
+					2 * Constants.TEXTURE_RESOLUTION, 
+					Constants.TEXTURE_RESOLUTION, 
+					Constants.TEXTURE_RESOLUTION);
+                if (InventoryController.Instance.currentSlot.currentItem != null || (selectedTile.gameObject as Creature) != null)
 					Render(MapController.Instance.tilesSheet, rect, src);
 			}
 
@@ -188,7 +195,7 @@ namespace Game.Controllers
 					objectsQueue[i].Update();
 					objectsQueue[i].PostUpdate();
 					if (MathOperations.Distance(objectsQueue[i].coords, mainHero.coords) > Constants.OBJECTS_DESPAWN_RANGE)
-                    {
+					{
 						if (MapController.Instance.HasChunk(objectsQueue[i].x, objectsQueue[i].y))
 							MapController.Instance.GetTile(objectsQueue[i].x, objectsQueue[i].y)?.SetGameObject(null);
 						if (currentObject != objectsQueue[i])
@@ -206,7 +213,7 @@ namespace Game.Controllers
 		}
 
 		public void Spawn(TurnBasedObject objectToSpawn)
-        {
+		{
 			objectsQueue.Add(GameObject.Spawn(objectToSpawn));
 			if (MapController.Instance.HasChunk(objectToSpawn.x, objectToSpawn.y))
 				MapController.Instance.GetTile(objectToSpawn.x, objectToSpawn.y).SetGameObject(objectToSpawn);
@@ -218,7 +225,7 @@ namespace Game.Controllers
 		/// <param name="saveName"></param>
 		/// <returns></returns>
 		public bool LoadGame(string saveName)
-        {
+		{
 			Directory.CreateDirectory(Directory.GetCurrentDirectory() + "\\Saves");
 			if (File.Exists(currentSavePath = Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat"))
 			{
@@ -238,6 +245,11 @@ namespace Game.Controllers
 							int playerY = int.Parse(info[2]);
 							mainHero = GameObject.Spawn("creature_hero", playerX, playerY);
 							objectsQueue.Add((TurnBasedObject)mainHero);
+							for (int j = 3; j < info.Length; j += 4)
+								InventoryController.Instance.AddItemsToSlot(
+									InventoryController.Instance.GetSlotByRowAndColumn((int.Parse(info[j]), int.Parse(info[j + 1]))),
+									Items.GetItemByID(int.Parse(info[j + 2])),
+									int.Parse(info[j + 3]));
 						}
 						else
 							Spawn((TurnBasedObject)GameObject.Spawn(int.Parse(info[0]), int.Parse(info[1]), int.Parse(info[2])));
@@ -256,8 +268,25 @@ namespace Game.Controllers
 			// кол-во существ на карте и их ID и координаты
 			saves.Add(objectsQueue.Count.ToString());
 			for (int i = 0; i < objectsQueue.Count; i++)
-				saves.Add(objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y);
-			
+				if (objectsQueue[i].objectID == 1)
+				{
+					string str = objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y;
+					foreach (var slotColumn in InventoryController.Instance.slots)
+						foreach (var slot in slotColumn)
+							if (slot.currentItem != null)
+							{
+								(int row, int column) s = InventoryController.Instance.GetRowAndColumnFromSlot(slot);
+								str += "," +
+									s.row + "," +
+									s.column + "," +
+									slot.currentItem.itemID + "," +
+									slot.itemsCount;
+							}
+					saves.Add(str);
+				}
+				else
+					saves.Add(objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y);
+
 			foreach (var save in savedChunks)
 				saves.Add(save.ToString());
 			File.WriteAllLines(currentSavePath = Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat", saves);
@@ -267,8 +296,8 @@ namespace Game.Controllers
 		{
 			if (MainWindow.DrawWindowClosingAnimation)
 				return;
-			if (e.KeyCode == Keys.Escape)
-				MainWindow.DrawWindowClosingAnimation = true;
+			/*if (e.KeyCode == Keys.Escape)
+				MainWindow.DrawWindowClosingAnimation = true;*/
 			if (e.KeyCode == KeyBindings.ToggleGridDrawing)
 				shouldDrawGrid = !shouldDrawGrid;
 
@@ -278,12 +307,15 @@ namespace Game.Controllers
 				InventoryController.Instance.currentSlotIndex = 9;
 
 			if (e.KeyCode == Keys.I)
-				InventoryController.Instance.showWholeInventory = !InventoryController.Instance.showWholeInventory;
+				if (InventoryController.Instance.displayMode != InventoryController.InventoryDisplayMode.HotbarOnly)
+					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.HotbarOnly;
+				else
+					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.WholeCenterAligned;
 
 			if (e.KeyCode == Keys.T)
-            {
+			{
 				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFence.Instance);
-				InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance);
+				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFenceGate.Instance);
 			}
 
 			if (!MapController.Instance.camera.cameraFinishedMovement || currentObject != mainHero || !mainHero.isMoving)
@@ -303,7 +335,7 @@ namespace Game.Controllers
 				//(t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1)).tileType = 1;
 				//MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
 				if ((t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1)).gameObject == null)
-                {
+				{
 					t.SetGameObject(GameObject.Spawn("obj_wall", mainHero.x, mainHero.y - 1));
 					MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
 					/*if (t.gameObject.objectName == "obj_wall")
@@ -312,7 +344,7 @@ namespace Game.Controllers
 			}
 
 			if (e.KeyCode == Keys.Return)
-            {
+			{
 				/*Tile t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1);
 				t?.SetGameObject(null);
 				MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);*/
@@ -320,13 +352,13 @@ namespace Game.Controllers
 			}
 
 			if (e.KeyCode == KeyBindings.SaveGame)
-				SaveGame("save1");
+				SaveGame("save");
 			if (e.KeyCode == Keys.O)
 			{
 				/*Tile t;
 				if ((t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1)).gameObject == null)
 				{
-					t.SetGameObject(GameObject.Spawn("obj_fencegate", mainHero.x, mainHero.y - 1));
+					t.SetGameObject(GameObject.Spawn("obj_fence_gate", mainHero.x, mainHero.y - 1));
 					MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
 				}*/
 				Spawn((TurnBasedObject)GameObject.Spawn("creature_test", mainHero.x, mainHero.y + 1));
@@ -344,7 +376,7 @@ namespace Game.Controllers
 		}
 
 		public void OnMouseDown(object sender, MouseEventArgs e)
-        {
+		{
 			mouseIsDown = true;
 		}
 
@@ -384,12 +416,12 @@ namespace Game.Controllers
 			foreach (var frame in renderQueue)
 			{
 				if (frame.GetFrameType() == "image")
-                {
+				{
 					ImageFrame request = (ImageFrame)frame;
 					graphics.DrawImage(request.imageToRender, request.destRect, request.srcRect, GraphicsUnit.Pixel);
 				}
 				else if (frame.GetFrameType() == "text")
-                {
+				{
 					TextFrame request = (TextFrame)frame;
 					graphics.DrawString(request.textToRender, request.font, request.brush, request.destPoint);
 				}

@@ -25,6 +25,14 @@ namespace Game.Controllers
 			}
 		}
 
+		public enum InventoryDisplayMode
+		{
+			DoNotDisplay,			// не отображать вообще
+			HotbarOnly,				// только слоты на горячие клавиши
+			WholeCenterAligned,		// обычное отображение инвентаря
+			WholeLeftAligned		// при просмотре сундуков и чужих инвентарей
+		}
+
 		public sealed class Slot
         {
 			public Item currentItem { get; private set; } = null;
@@ -72,7 +80,7 @@ namespace Game.Controllers
 				from.currentItem = tempItem;
 				from.itemsCount = tempCount;
 			}
-		}
+        }
 
 		private int columns = 10;
 		private int rows = 5;
@@ -101,7 +109,7 @@ namespace Game.Controllers
 		private Font itemsCountFont;
 		private Brush itemsCountBrush;
 
-		public bool showWholeInventory;
+		public InventoryDisplayMode displayMode;
 		private Slot draggingItemFromSlot = null;
 		public bool isDraggingItem { get; private set; }
 
@@ -136,7 +144,7 @@ namespace Game.Controllers
 			itemDestRect.Width = slotSize - 20;
 			itemDestRect.Height = slotSize - 20;
 
-			showWholeInventory = false;
+			displayMode = InventoryDisplayMode.HotbarOnly;
 
 			itemsCountFont = new Font(Fonts.fonts.Families[0], 25.0F, FontStyle.Bold);
 			itemsCountBrush = new SolidBrush(Color.White);
@@ -225,6 +233,15 @@ namespace Game.Controllers
 			
 			return false;
 		}
+		public Slot GetSlotByRowAndColumn((int row, int column) slot) => slots[slot.column][slot.row];
+		public (int row, int column) GetRowAndColumnFromSlot(Slot slot)
+        {
+			for (int j = 0; j < rows; j++)
+				for (int i = 0; i < columns; i++)
+					if (slots[i][j] == slot)
+						return (j, i);
+			return (-1, -1);
+		}
 
 		public void PreUpdate() { }
 		public void Update() { }
@@ -232,88 +249,252 @@ namespace Game.Controllers
 		{
 			selectedSlot = null;
 			bool mouseWasInsideSlot = false;
-			for (int i = 0; i < columns; i++)
-				for (int j = 0; j < rows; j++)
-                {
-					if (!showWholeInventory)
-						if (j < rows - 1)
-							continue;
 
-					slotDestRect = slots[i][j].screenRect;
-
-					if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
-                    {
-						mouseWasInsideSlot = true;
-						GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, selectedSlotSrcRect);
-						if (draggingItemFromSlot == null)
+			switch (displayMode)
+            {
+				case InventoryDisplayMode.DoNotDisplay:
+					break;
+				case InventoryDisplayMode.HotbarOnly:
+					for (int i = 0; i < columns; i++)
 						{
-							selectedSlot = slots[i][j];
-							if (GameController.Instance.mouseIsDown)
+							int j = rows - 1;
+							slotDestRect = slots[i][j].screenRect;
+
+							if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
 							{
-								draggingItemFromSlot = selectedSlot;
-								isDraggingItem = true;
-							}
-						}
-						else if (!GameController.Instance.mouseIsDown)
-                        {
-							if (draggingItemFromSlot.currentItem != null && draggingItemFromSlot != slots[i][j])
-                            {
-								if (draggingItemFromSlot.currentItem?.itemName != slots[i][j].currentItem?.itemName)
-									Slot.SwapSlots(draggingItemFromSlot, slots[i][j]);
-								else
-                                {
-									if (slots[i][j].itemsCount + draggingItemFromSlot.itemsCount <= slots[i][j].currentItem.maxStackQuantity)
+								mouseWasInsideSlot = true;
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, selectedSlotSrcRect);
+								if (draggingItemFromSlot == null)
+								{
+									selectedSlot = slots[i][j];
+									if (GameController.Instance.mouseIsDown)
 									{
-										slots[i][j].itemsCount += draggingItemFromSlot.itemsCount;
-										draggingItemFromSlot.SetItem(null, 0);
-									}
-									else
-									{
-										int remaining = slots[i][j].currentItem.maxStackQuantity - slots[i][j].itemsCount;
-										slots[i][j].itemsCount = slots[i][j].currentItem.maxStackQuantity;
-										if ((draggingItemFromSlot.itemsCount -= remaining) <= 0)
-										{
-											draggingItemFromSlot.SetItem(null, 0);
-										}
+										draggingItemFromSlot = selectedSlot;
+										isDraggingItem = true;
 									}
 								}
+								else if (!GameController.Instance.mouseIsDown)
+								{
+									if (draggingItemFromSlot.currentItem != null && draggingItemFromSlot != slots[i][j])
+									{
+										if (draggingItemFromSlot.currentItem?.itemName != slots[i][j].currentItem?.itemName)
+											Slot.SwapSlots(draggingItemFromSlot, slots[i][j]);
+										else
+										{
+											if (slots[i][j].itemsCount + draggingItemFromSlot.itemsCount <= slots[i][j].currentItem.maxStackQuantity)
+											{
+												slots[i][j].itemsCount += draggingItemFromSlot.itemsCount;
+												draggingItemFromSlot.SetItem(null, 0);
+											}
+											else
+											{
+												int remaining = slots[i][j].currentItem.maxStackQuantity - slots[i][j].itemsCount;
+												slots[i][j].itemsCount = slots[i][j].currentItem.maxStackQuantity;
+												if ((draggingItemFromSlot.itemsCount -= remaining) <= 0)
+												{
+													draggingItemFromSlot.SetItem(null, 0);
+												}
+											}
+										}
+									}
+									draggingItemFromSlot = null;
+									isDraggingItem = false;
+								}
 							}
-							draggingItemFromSlot = null;
-							isDraggingItem = false;
+							else if (slots[i][j] == currentSlot/*currentSlotIndex == i && j == rows - 1*/)
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, currentSlotSrcRect);
+							else
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, slotSrcRect);
+
+							if (slots[i][j].currentItem != null && slots[i][j] != draggingItemFromSlot)
+							{
+								itemDestRect.X = slotDestRect.X + 10;
+								itemDestRect.Y = slotDestRect.Y + 10;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									slots[i][j].currentItem.itemSrcRect);
+								GameController.Instance.Render(
+									slots[i][j].itemsCount.ToString(),
+									new Point(
+										itemDestRect.X + (int)(55 - 10f * slots[i][j].itemsCount.ToString().Length),
+										itemDestRect.Y + 35),
+									itemsCountFont,
+									itemsCountBrush);
+							}
+
+							if (draggingItemFromSlot != null && draggingItemFromSlot.currentItem != null)
+							{
+								itemDestRect.X = GameController.Instance.mousePosition.X - 16;
+								itemDestRect.Y = GameController.Instance.mousePosition.Y - 16;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									draggingItemFromSlot.currentItem.itemSrcRect);
+							}
 						}
-					}
-					else if (slots[i][j] == currentSlot/*currentSlotIndex == i && j == rows - 1*/)
-						GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, currentSlotSrcRect);
-					else
-						GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, slotSrcRect);
+					break;
+				case InventoryDisplayMode.WholeCenterAligned:
+					for (int i = 0; i < columns; i++)
+						for (int j = 0; j < rows; j++)
+						{
+							slotDestRect = slots[i][j].screenRect;
 
-					if (slots[i][j].currentItem != null && slots[i][j] != draggingItemFromSlot)
-                    {
-						itemDestRect.X = slotDestRect.X + 10;
-						itemDestRect.Y = slotDestRect.Y + 10;
-						GameController.Instance.Render(
-							MapController.Instance.itemsSheet, 
-							itemDestRect, 
-							slots[i][j].currentItem.itemSrcRect);
-						GameController.Instance.Render(
-							slots[i][j].itemsCount.ToString(), 
-							new Point(
-								itemDestRect.X + (int)(55 - 10f * slots[i][j].itemsCount.ToString().Length), 
-								itemDestRect.Y + 35), 
-							itemsCountFont,
-							itemsCountBrush);
-					}
+							if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
+							{
+								mouseWasInsideSlot = true;
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, selectedSlotSrcRect);
+								if (draggingItemFromSlot == null)
+								{
+									selectedSlot = slots[i][j];
+									if (GameController.Instance.mouseIsDown)
+									{
+										draggingItemFromSlot = selectedSlot;
+										isDraggingItem = true;
+									}
+								}
+								else if (!GameController.Instance.mouseIsDown)
+								{
+									if (draggingItemFromSlot.currentItem != null && draggingItemFromSlot != slots[i][j])
+									{
+										if (draggingItemFromSlot.currentItem?.itemName != slots[i][j].currentItem?.itemName)
+											Slot.SwapSlots(draggingItemFromSlot, slots[i][j]);
+										else
+										{
+											if (slots[i][j].itemsCount + draggingItemFromSlot.itemsCount <= slots[i][j].currentItem.maxStackQuantity)
+											{
+												slots[i][j].itemsCount += draggingItemFromSlot.itemsCount;
+												draggingItemFromSlot.SetItem(null, 0);
+											}
+											else
+											{
+												int remaining = slots[i][j].currentItem.maxStackQuantity - slots[i][j].itemsCount;
+												slots[i][j].itemsCount = slots[i][j].currentItem.maxStackQuantity;
+												if ((draggingItemFromSlot.itemsCount -= remaining) <= 0)
+												{
+													draggingItemFromSlot.SetItem(null, 0);
+												}
+											}
+										}
+									}
+									draggingItemFromSlot = null;
+									isDraggingItem = false;
+								}
+							}
+							else if (slots[i][j] == currentSlot/*currentSlotIndex == i && j == rows - 1*/)
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, currentSlotSrcRect);
+							else
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, slotSrcRect);
 
-					if (draggingItemFromSlot != null && draggingItemFromSlot.currentItem != null)
-                    {
-						itemDestRect.X = GameController.Instance.mousePosition.X - 16;
-						itemDestRect.Y = GameController.Instance.mousePosition.Y - 16;
-						GameController.Instance.Render(
-							MapController.Instance.itemsSheet, 
-							itemDestRect,
-							draggingItemFromSlot.currentItem.itemSrcRect);
-					}
-				}
+							if (slots[i][j].currentItem != null && slots[i][j] != draggingItemFromSlot)
+							{
+								itemDestRect.X = slotDestRect.X + 10;
+								itemDestRect.Y = slotDestRect.Y + 10;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									slots[i][j].currentItem.itemSrcRect);
+								GameController.Instance.Render(
+									slots[i][j].itemsCount.ToString(),
+									new Point(
+										itemDestRect.X + (int)(55 - 10f * slots[i][j].itemsCount.ToString().Length),
+										itemDestRect.Y + 35),
+									itemsCountFont,
+									itemsCountBrush);
+							}
+
+							if (draggingItemFromSlot != null && draggingItemFromSlot.currentItem != null)
+							{
+								itemDestRect.X = GameController.Instance.mousePosition.X - 16;
+								itemDestRect.Y = GameController.Instance.mousePosition.Y - 16;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									draggingItemFromSlot.currentItem.itemSrcRect);
+							}
+						}
+					break;
+				case InventoryDisplayMode.WholeLeftAligned:
+					for (int i = 0; i < columns; i++)
+						for (int j = 0; j < rows; j++)
+						{
+							slotDestRect = slots[i][j].screenRect;
+
+							if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
+							{
+								mouseWasInsideSlot = true;
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, selectedSlotSrcRect);
+								if (draggingItemFromSlot == null)
+								{
+									selectedSlot = slots[i][j];
+									if (GameController.Instance.mouseIsDown)
+									{
+										draggingItemFromSlot = selectedSlot;
+										isDraggingItem = true;
+									}
+								}
+								else if (!GameController.Instance.mouseIsDown)
+								{
+									if (draggingItemFromSlot.currentItem != null && draggingItemFromSlot != slots[i][j])
+									{
+										if (draggingItemFromSlot.currentItem?.itemName != slots[i][j].currentItem?.itemName)
+											Slot.SwapSlots(draggingItemFromSlot, slots[i][j]);
+										else
+										{
+											if (slots[i][j].itemsCount + draggingItemFromSlot.itemsCount <= slots[i][j].currentItem.maxStackQuantity)
+											{
+												slots[i][j].itemsCount += draggingItemFromSlot.itemsCount;
+												draggingItemFromSlot.SetItem(null, 0);
+											}
+											else
+											{
+												int remaining = slots[i][j].currentItem.maxStackQuantity - slots[i][j].itemsCount;
+												slots[i][j].itemsCount = slots[i][j].currentItem.maxStackQuantity;
+												if ((draggingItemFromSlot.itemsCount -= remaining) <= 0)
+												{
+													draggingItemFromSlot.SetItem(null, 0);
+												}
+											}
+										}
+									}
+									draggingItemFromSlot = null;
+									isDraggingItem = false;
+								}
+							}
+							else if (slots[i][j] == currentSlot/*currentSlotIndex == i && j == rows - 1*/)
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, currentSlotSrcRect);
+							else
+								GameController.Instance.Render(MapController.Instance.uiSheet, slotDestRect, slotSrcRect);
+
+							if (slots[i][j].currentItem != null && slots[i][j] != draggingItemFromSlot)
+							{
+								itemDestRect.X = slotDestRect.X + 10;
+								itemDestRect.Y = slotDestRect.Y + 10;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									slots[i][j].currentItem.itemSrcRect);
+								GameController.Instance.Render(
+									slots[i][j].itemsCount.ToString(),
+									new Point(
+										itemDestRect.X + (int)(55 - 10f * slots[i][j].itemsCount.ToString().Length),
+										itemDestRect.Y + 35),
+									itemsCountFont,
+									itemsCountBrush);
+							}
+
+							if (draggingItemFromSlot != null && draggingItemFromSlot.currentItem != null)
+							{
+								itemDestRect.X = GameController.Instance.mousePosition.X - 16;
+								itemDestRect.Y = GameController.Instance.mousePosition.Y - 16;
+								GameController.Instance.Render(
+									MapController.Instance.itemsSheet,
+									itemDestRect,
+									draggingItemFromSlot.currentItem.itemSrcRect);
+							}
+						}
+					break;
+			}
 
 			if (draggingItemFromSlot != null && 
 				draggingItemFromSlot.currentItem != null && 
