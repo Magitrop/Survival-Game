@@ -62,22 +62,22 @@ namespace Game.Map
 
 			// загрузка сохраненных клеток
 			SavedChunkInfo info;
-			(int, int) t_coords;
+			(int x, int y) t_coords;
 			Tile tile;
 			if ((info = GameController.Instance.savedChunks.Find(c => c.chunkX == x && c.chunkY == y)) != null)
 			{
 				int count = info.changedTiles.Count;
-				(byte, byte, byte) t;
+				(byte coords, byte type, byte obj) t;
 				for (int i = 0; i < count; i++)
 				{
 					t = info.changedTiles[i];
-					t_coords = info.GetTile(t.Item1);
-					(tile = tiles[t_coords.Item1, t_coords.Item2]).tileType = t.Item2;
+					t_coords = info.GetTile(t.coords);
+					(tile = tiles[t_coords.x, t_coords.y]).tileType = t.type;
 					// если на клетке есть объект и это не герой
-					if (t.Item3 == 0)
+					if (t.obj == 0)
 						tile.SetGameObject(null);
-					else if (t.Item3 > 1)
-						GameObject.Spawn(t.Item3, tile.globalX, tile.globalY);
+					else if (t.obj > 1)
+						GameObject.Spawn(t.obj, tile.globalX, tile.globalY);
 				}
 			}
 		}

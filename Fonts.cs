@@ -10,6 +10,8 @@ namespace Game
 {
     public sealed class Fonts
     {
+        private Fonts() { }
+
         [System.Runtime.InteropServices.DllImport("gdi32.dll")]
         public static extern IntPtr AddFontMemResourceEx(IntPtr pbFont, uint cbFont,
             IntPtr pdv, [System.Runtime.InteropServices.In] ref uint pcFonts);

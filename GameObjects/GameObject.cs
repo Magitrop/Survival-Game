@@ -146,7 +146,7 @@ namespace Game.GameObjects
 				case "creature_test": return Spawn(new TestCreature(atX, atY));
 				case "obj_tree": return Spawn(new Tree(atX, atY));
 				case "obj_wall": return Spawn(new WallObject(atX, atY));
-				case "obj_fencegate": return Spawn(new FenceGateObject(atX, atY));
+				case "obj_fence_gate": return Spawn(new FenceGateObject(atX, atY));
 				default:
 					return null;
 			}
@@ -160,7 +160,7 @@ namespace Game.GameObjects
 				case 2: return "creature_test";
 				case 100: return "obj_tree";
 				case 101: return "obj_wall";
-				case 102: return "obj_fencegate";
+				case 102: return "obj_fence_gate";
 				default:
 					return "null";
 			}
@@ -174,7 +174,7 @@ namespace Game.GameObjects
 				case "creature_test": return 2;
 				case "obj_tree": return 100;
 				case "obj_wall": return 101;
-				case "obj_fencegate": return 102;
+				case "obj_fence_gate": return 102;
 				default:
 					return 0;
 			}

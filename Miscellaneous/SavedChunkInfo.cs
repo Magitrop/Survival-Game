@@ -7,11 +7,17 @@ using System.Threading.Tasks;
 
 namespace Game.Miscellaneous
 {
-    [Serializable]
+    public sealed class SavedTileInfo
+    {
+        public byte coords;
+        public byte type;
+        public byte[] additionalInformation;
+    }
+
     public sealed class SavedChunkInfo
     {
         public int chunkX, chunkY;
-        public List<(byte, byte, byte)> changedTiles;
+        public List<(byte coords, byte type, byte obj)> changedTiles;
 
         public SavedChunkInfo(string info)
         {
@@ -38,13 +44,13 @@ namespace Game.Miscellaneous
 
         public void AddTile(byte _x, byte _y, byte _type, byte _object)
         {
-            (byte, byte, byte) curChange = (0, 0, 0);
-            curChange.Item1 = (byte)(((curChange.Item1 = _y) << 3) + _x);
-            curChange.Item2 = _type;
+            (byte coords, byte type, byte obj) curChange = (0, 0, 0);
+            curChange.coords = (byte)(((curChange.coords = _y) << 3) + _x);
+            curChange.type = _type;
             if (_object >= 100)
-                curChange.Item3 = _object;
+                curChange.obj = _object;
             else
-                curChange.Item3 = 0;
+                curChange.obj = 0;
             changedTiles.Add(curChange);
         }
 
@@ -59,11 +65,11 @@ namespace Game.Miscellaneous
         public override string ToString()
         {
             string result = chunkX + "," + chunkY + ":";
-            (int, int) t;
+            (int x, int y) t;
             for (int i = 0; i < changedTiles.Count; i++)
             {
-                t = GetTile(changedTiles[i].Item1);
-                result += t.Item1 + "," + t.Item2 + "," + changedTiles[i].Item2 + "," + changedTiles[i].Item3;
+                t = GetTile(changedTiles[i].coords);
+                result += t.x + "," + t.y + "," + changedTiles[i].type + "," + changedTiles[i].obj;
                 if (i != changedTiles.Count - 1)
                     result += "|";
             }
