@@ -93,7 +93,10 @@ namespace Game.Controllers
 			Chunk chunk = MapController.Instance.GetChunk(mainHero.x, mainHero.y);
 			MapController.Instance.GetTile(mainHero.x, mainHero.y).SetGameObject(GameObject.Spawn(mainHero));
 			MapController.Instance.RecalculateChunks(chunk.x, chunk.y);
+
 			(MapController.Instance.camera = new Camera(mainHero.x, mainHero.y)).target = mainHero;
+			MoveHero(999999, 999999, true);
+			MoveHero(-999999, -999999, true);
 
 			currentObjectIndex = 0;
 		}
@@ -168,7 +171,7 @@ namespace Game.Controllers
 						InventoryController.Instance.currentSlot.currentItem.isPlaceable)
 					{
 						if (selectedTile.gameObject == null)
-							if (InventoryController.Instance.currentSlot.currentItem.OnItemPlacing(selectedTile))
+							if (InventoryController.Instance.currentSlot.currentItem.OnItemPlacing(selectedTile, mainHero))
 								InventoryController.Instance.WithdrawItemsFromSlot(
 									InventoryController.Instance.currentSlot, 
 									InventoryController.Instance.currentSlot.currentItem, 1);
@@ -252,7 +255,12 @@ namespace Game.Controllers
 									int.Parse(info[j + 3]));
 						}
 						else
+                        {
+							List<byte> _addInfo = new List<byte>();
+							for (int j = 3; j < info.Length; j++)
+								_addInfo.Add(byte.Parse(info[j]));
 							Spawn((TurnBasedObject)GameObject.Spawn(int.Parse(info[0]), int.Parse(info[1]), int.Parse(info[2])));
+						}
 					}
 				}
 				return true;
@@ -363,16 +371,16 @@ namespace Game.Controllers
 				}*/
 				Spawn((TurnBasedObject)GameObject.Spawn("creature_test", mainHero.x, mainHero.y + 1));
 			}
+		}
 
-			void MoveHero(int xOffset, int yOffset)
-			{
-				Chunk previousChunk = MapController.Instance.GetChunk(mainHero.x, mainHero.y);
-				mainHero.MoveTo(mainHero.x + xOffset, mainHero.y + yOffset);
-				Chunk chunk = MapController.Instance.GetChunk(mainHero.x, mainHero.y);
-				if (previousChunk != chunk)
-					MapController.Instance.RecalculateChunks(chunk.x, chunk.y);
-				MapController.Instance.camera.CameraFollow();
-			}
+		private void MoveHero(int xOffset, int yOffset, bool byForce = false)
+		{
+			Chunk previousChunk = MapController.Instance.GetChunk(mainHero.x, mainHero.y);
+			mainHero.MoveTo(mainHero.x + xOffset, mainHero.y + yOffset, byForce);
+			Chunk chunk = MapController.Instance.GetChunk(mainHero.x, mainHero.y);
+			if (previousChunk != chunk)
+				MapController.Instance.RecalculateChunks(chunk.x, chunk.y);
+			MapController.Instance.camera.CameraFollow();
 		}
 
 		public void OnMouseDown(object sender, MouseEventArgs e)

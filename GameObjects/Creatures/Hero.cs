@@ -15,7 +15,10 @@ namespace Game.GameObjects
     {
         private class Hero : Creature
         {
-            public Hero(int _x, int _y) : base(_x, _y, 1, "creature_hero", MapController.Instance.tilesSheet)
+            public Hero(
+                int _x, 
+                int _y, 
+                byte[] additionalInformation = null) : base(_x, _y, 1, "creature_hero", MapController.Instance.tilesSheet, additionalInformation)
             {
                 destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
                 srcRect = new Rectangle(32, 32, 16, 16);

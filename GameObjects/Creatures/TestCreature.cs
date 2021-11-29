@@ -20,7 +20,10 @@ namespace Game.GameObjects
 			private List<(int x, int y)> currentPath;
 			private int currentPathIndex;
 
-			public TestCreature(int _x, int _y) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet)
+			public TestCreature(
+				int _x, 
+				int _y, 
+				byte[] additionalInformation = null) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(32, 32, 16, 16);

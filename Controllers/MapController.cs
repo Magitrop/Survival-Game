@@ -198,11 +198,11 @@ namespace Game.Controllers
 				SavedChunkInfo info;
 				int _x = coordX >= 0 ? (coordX % Constants.CHUNK_SIZE) : (Constants.CHUNK_SIZE + (coordX % Constants.CHUNK_SIZE)) % Constants.CHUNK_SIZE;
 				int _y = coordY >= 0 ? (coordY % Constants.CHUNK_SIZE) : (Constants.CHUNK_SIZE + (coordY % Constants.CHUNK_SIZE)) % Constants.CHUNK_SIZE;
-				if ((info = GameController.Instance.savedChunks.Find(c => c.changedTiles.Any(t => t.Item1 == (byte)((_y << 3) + _x)))) != null)
+				if ((info = GameController.Instance.savedChunks.Find(c => c.changedTiles.Any(t => t.coords == (byte)((_y << 3) + _x)))) != null)
 				{
-					var t = info.changedTiles.Find(c => c.Item1 == (byte)((_y << 3) + _x));
+					var t = info.changedTiles.Find(c => c.coords == (byte)((_y << 3) + _x));
 					// если на клетке есть объект
-					if (t.Item3 > 0)
+					if (t.additionalInformation.Length > 0 && t.additionalInformation[0] > 0)
 						return false;
 				}
 

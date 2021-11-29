@@ -50,5 +50,14 @@ namespace Game.Miscellaneous
 			cameraFinishedMovement = reachX && reachY;
 			return cameraFinishedMovement;
 		}
+
+		public void TeleportCamera()
+        {
+			if (target == null)
+				return;
+			x = -target.x * Constants.TILE_SIZE + Constants.WINDOW_WIDTH / 2 - Constants.TILE_SIZE / 2;
+			y = -target.y * Constants.TILE_SIZE + Constants.WINDOW_HEIGHT / 2 - Constants.TILE_SIZE / 2;
+			cameraFinishedMovement = true;
+		}
 	}
 }

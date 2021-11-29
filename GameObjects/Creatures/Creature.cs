@@ -16,7 +16,13 @@ namespace Game.GameObjects.Creatures
 		public int damageAmount;
 		public bool isAlive;
 
-		protected Creature(int _x, int _y, int ID, string name, Image _sprite) : base(_x, _y, ID, name, _sprite) { }
+		protected Creature(
+			int _x, 
+			int _y, 
+			int ID, 
+			string name, 
+			Image _sprite, 
+			byte[] additionalInformation = null) : base(_x, _y, ID, name, _sprite, additionalInformation) { }
 
 		public static bool DealDamage(Creature target, Creature sender, int amount)
         {

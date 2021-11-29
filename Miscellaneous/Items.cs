@@ -24,7 +24,7 @@ namespace Game.Miscellaneous
 
 		public virtual void OnItemReceive() { }
 		public virtual void OnItemUse() { }
-		public virtual bool OnItemPlacing(Tile placeAt) { return true; }
+		public virtual bool OnItemPlacing(Tile placeAt, GameObject sender = null) { return true; }
 	}
 
 	public static class Items
@@ -99,13 +99,17 @@ namespace Game.Miscellaneous
 				}
 			}
 
-            public override bool OnItemPlacing(Tile placeAt)
+            public override bool OnItemPlacing(Tile placeAt, GameObject sender = null)
             {
 				// нельзя ставить в воде
 				if (placeAt.tileType < 2)
 					return false;
 
-				placeAt.SetGameObject(GameObject.Spawn("obj_wall", placeAt.globalX, placeAt.globalY));
+				placeAt.SetGameObject(
+					GameObject.Spawn(
+						"obj_wall", 
+						placeAt.globalX, 
+						placeAt.globalY));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}
@@ -134,13 +138,18 @@ namespace Game.Miscellaneous
 				}
 			}
 
-			public override bool OnItemPlacing(Tile placeAt)
+			public override bool OnItemPlacing(Tile placeAt, GameObject sender = null)
 			{
 				// нельзя ставить в воде
 				if (placeAt.tileType < 2)
 					return false;
 
-				placeAt.SetGameObject(GameObject.Spawn("obj_fence_gate", placeAt.globalX, placeAt.globalY));
+				placeAt.SetGameObject(
+					GameObject.Spawn(
+						"obj_fence_gate", 
+						placeAt.globalX, 
+						placeAt.globalY, 
+						new byte[] { (byte)GameObject.GetObjectIDByName("obj_fence_gate"), (byte)(sender?.x != placeAt.globalX ? 1 : 0) }));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}

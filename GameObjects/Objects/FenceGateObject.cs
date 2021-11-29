@@ -14,10 +14,19 @@ namespace Game.GameObjects
 	{
 		private sealed class FenceGateObject : GameObject
 		{
-			public FenceGateObject(int _x, int _y) : base(_x, _y, 102, "obj_fence_gate", MapController.Instance.objectsSheet)
+			public FenceGateObject(
+				int _x, 
+				int _y, 
+				byte[] additionalInformation = null) : base(_x, _y, 102, "obj_fence_gate", MapController.Instance.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
-				srcRect = new Rectangle(16 * 4, 16 * 2, 16, 16);
+
+				// калитка повернута боком
+				if (additionalInformation != null && additionalInformation.Length > 1 && additionalInformation[1] == 1)
+					srcRect = new Rectangle(16 * 4, 16 * 3, 16, 16);
+				else 
+					srcRect = new Rectangle(16 * 4, 16 * 2, 16, 16);
+
 				isDespawnable = true;
 
 				Start();

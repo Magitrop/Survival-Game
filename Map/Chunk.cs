@@ -67,17 +67,19 @@ namespace Game.Map
 			if ((info = GameController.Instance.savedChunks.Find(c => c.chunkX == x && c.chunkY == y)) != null)
 			{
 				int count = info.changedTiles.Count;
-				(byte coords, byte type, byte obj) t;
+				SavedTileInfo t;
 				for (int i = 0; i < count; i++)
 				{
 					t = info.changedTiles[i];
 					t_coords = info.GetTile(t.coords);
 					(tile = tiles[t_coords.x, t_coords.y]).tileType = t.type;
 					// если на клетке есть объект и это не герой
-					if (t.obj == 0)
+					if (t.additionalInformation.Length == 0 || t.additionalInformation[0] == 0)
 						tile.SetGameObject(null);
-					else if (t.obj > 1)
-						GameObject.Spawn(t.obj, tile.globalX, tile.globalY);
+					else if (t.additionalInformation[0] > 1)
+                    {
+						GameObject.Spawn(t.additionalInformation[0], tile.globalX, tile.globalY, t.additionalInformation);
+					}
 				}
 			}
 		}
@@ -122,10 +124,10 @@ namespace Game.Map
 				if ((info = GameController.Instance.savedChunks.Find(c => c.chunkX == x && c.chunkY == y)) == null)
 					GameController.Instance.savedChunks.Add(info = new SavedChunkInfo(x, y));
 				// если среди измененных клеток пока что нет клетки с такими координатами
-				int index = info.changedTiles.FindIndex(t => ((t.Item1 & 7) == coordX) && (t.Item1 >> 3 == coordY));
+				int index = info.changedTiles.FindIndex(t => ((t.coords & 7) == coordX) && (t.coords >> 3 == coordY));
 				if (index != -1)
 					info.changedTiles.RemoveAt(index);
-				info.AddTile((byte)coordX, (byte)coordY, (byte)tile.tileType, (byte)(tile.gameObject?.objectID ?? 0));
+				info.AddTile((byte)coordX, (byte)coordY, (byte)tile.tileType, tile.gameObject?.objectAdditionalInformation ?? new byte[]{ 0 });
 			}
 		}
 	}

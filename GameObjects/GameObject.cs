@@ -41,7 +41,7 @@ namespace Game.GameObjects
 				MathOperations.Distance(coords, GameController.Instance.mainHero.coords) < 
 					Math.Max(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT) / (2 * Constants.TILE_SIZE);
         }
-		public (int, int) coords
+		public (int x, int y) coords
         {
 			get => (x, y);
         }
@@ -51,26 +51,28 @@ namespace Game.GameObjects
 		}
 		public Rectangle destRect;
 		public Rectangle srcRect;
+		public byte[] objectAdditionalInformation;
 
-		protected GameObject(int _x, int _y, int ID, string name, Image _sprite)
+		protected GameObject(int _x, int _y, int ID, string name, Image _sprite, byte[] additionalInformation = null)
 		{
 			visualX = x = _x;
 			visualY = y = _y;
 			objectID = ID;
 			objectName = name;
 			sprite = _sprite;
+			objectAdditionalInformation = additionalInformation ?? new byte[] { (byte)objectID };
 		}
 
 		public virtual void OnSpawn() { }
 		public virtual void OnDespawn() { }
 		public abstract void Update();
 		public abstract void Render();
-		public bool MoveTo(int _x, int _y)
+		public bool MoveTo(int _x, int _y, bool byForce = false)
 		{
 			if (MapController.Instance.HasChunk(_x, _y))
             {
 				Tile moveTo = MapController.Instance.GetTile(_x, _y);
-				if (moveTo.gameObject != null)
+				if (moveTo.gameObject != null && !byForce)
 					return false;
 				MapController.Instance.GetTile(x, y).SetGameObject(null);
 				x = _x;
@@ -79,7 +81,7 @@ namespace Game.GameObjects
 			}
             else
             {
-				if (!MapController.Instance.CheckTile(_x, _y, MapController.CheckIfTile.IsPassable))
+				if (!MapController.Instance.CheckTile(_x, _y, MapController.CheckIfTile.IsPassable) && !byForce)
 					return false;
 				MapController.Instance.GetTile(x, y, false)?.SetGameObject(null);
 				x = _x;
@@ -88,10 +90,10 @@ namespace Game.GameObjects
 			return true;
 		}
 
-		public bool MoveToVisual()
+		public bool MoveToVisual(bool instantly = false)
         {
 			bool resultX, resultY;
-			if (isVisible)
+			if (isVisible && !instantly)
 			{
 				float speed = visualMovementSpeed * Time.deltaTime;
 				visualX = MathOperations.MoveTowards(visualX, x, speed, out resultX);
@@ -124,29 +126,29 @@ namespace Game.GameObjects
 			return objectToSpawn;
 		}
 
-		public static GameObject Spawn(int _objectID, int atX, int atY)
+		public static GameObject Spawn(int _objectID, int atX, int atY, byte[] additionalInformation = null)
         {
 			switch (_objectID)
             {
-				case 1: return Spawn(new Hero(atX, atY));
-				case 2: return Spawn(new TestCreature(atX, atY));
-				case 100: return Spawn(new Tree(atX, atY));
-				case 101: return Spawn(new WallObject(atX, atY));
-				case 102: return Spawn(new FenceGateObject(atX, atY));
+				case 1: return Spawn(new Hero(atX, atY, additionalInformation));
+				case 2: return Spawn(new TestCreature(atX, atY, additionalInformation));
+				case 100: return Spawn(new Tree(atX, atY, additionalInformation));
+				case 101: return Spawn(new WallObject(atX, atY, additionalInformation));
+				case 102: return Spawn(new FenceGateObject(atX, atY, additionalInformation));
 				default:
 					return null;
             }
 		}
 
-		public static GameObject Spawn(string _objectName, int atX, int atY)
+		public static GameObject Spawn(string _objectName, int atX, int atY, byte[] additionalInformation = null)
 		{
 			switch (_objectName)
 			{
-				case "creature_hero": return Spawn(new Hero(atX, atY));
-				case "creature_test": return Spawn(new TestCreature(atX, atY));
-				case "obj_tree": return Spawn(new Tree(atX, atY));
-				case "obj_wall": return Spawn(new WallObject(atX, atY));
-				case "obj_fence_gate": return Spawn(new FenceGateObject(atX, atY));
+				case "creature_hero": return Spawn(new Hero(atX, atY, additionalInformation));
+				case "creature_test": return Spawn(new TestCreature(atX, atY, additionalInformation));
+				case "obj_tree": return Spawn(new Tree(atX, atY, additionalInformation));
+				case "obj_wall": return Spawn(new WallObject(atX, atY, additionalInformation));
+				case "obj_fence_gate": return Spawn(new FenceGateObject(atX, atY, additionalInformation));
 				default:
 					return null;
 			}
