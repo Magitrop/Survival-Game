@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Game.Controllers
 {
-    public sealed class InventoryController : IBehaviour
+	public sealed class InventoryController : IBehaviour
 	{
 		// singleton
 		private InventoryController() { }
@@ -29,29 +29,29 @@ namespace Game.Controllers
 		{
 			DoNotDisplay,			// не отображать вообще
 			HotbarOnly,				// только слоты на горячие клавиши
-			WholeCenterAligned,		// обычное отображение инвентаря
-			WholeLeftAligned		// при просмотре сундуков и чужих инвентарей
+			PlayerOnly,				// обычное отображение инвентаря
+			Whole					// для сундуков
 		}
 
 		public sealed class Slot
-        {
+		{
 			public Item currentItem { get; private set; } = null;
 			public int itemsCount;
 
 			public Rectangle screenRect;
 
-			public void SetItem(Item itemToSet, int count)
-            {
+			public void SetItem(Item itemToSet, int count, bool triggerReceiveEvent = true)
+			{
 				currentItem = itemToSet;
 				itemsCount = count;
-				if (itemToSet != null)
+				if (itemToSet != null && triggerReceiveEvent)
 					itemToSet.OnItemReceive();
-            }
+			}
 
 			public void UseItem()
-            {
+			{
 				if (currentItem != null)
-                {
+				{
 					currentItem.OnItemUse();
 					if (currentItem.isConsumable)
 						if (currentItem.usesLeft-- < 0)
@@ -61,7 +61,7 @@ namespace Game.Controllers
 			}
 
 			public void TrashItem()
-            {
+			{
 				if (currentItem != null)
 				{
 					//currentItem.OnItemTrash();
@@ -80,24 +80,29 @@ namespace Game.Controllers
 				from.currentItem = tempItem;
 				from.itemsCount = tempCount;
 			}
-        }
+		}
 
 		private int columns = 10;
-		private int rows = 5;
+		private int playerRows = 3;
+		private int chestRows = 3;
+		private int rows
+		{
+			get => playerRows + chestRows;
+		}
 		public int slotsCount
-        {
-			get => columns * rows;
-        }
+		{
+			get => columns * (rows + chestRows);
+		}
 		public int slotSize
-        {
+		{
 			get => 80;
-        }
+		}
 		public List<Slot[]> slots = new List<Slot[]>();
 		public int currentSlotIndex = 0;
 		public Slot currentSlot
 		{
 			get => slots[currentSlotIndex][rows - 1];
-        }
+		}
 		public Slot selectedSlot { get; private set; }
 
 		private Rectangle slotDestRect;
@@ -114,12 +119,12 @@ namespace Game.Controllers
 		public bool isDraggingItem { get; private set; }
 
 		public void Start()
-        {
+		{
 			for (int i = 0; i < columns; i++)
-            {
+			{
 				slots.Add(new Slot[rows]);
 				for (int j = 0; j < rows; j++)
-                {
+				{
 					(slots[i][j] = new Slot()).screenRect = new Rectangle
 						(
 							i * slotSize + (Constants.WINDOW_WIDTH - columns * slotSize - 16) / 2,
@@ -149,9 +154,26 @@ namespace Game.Controllers
 			itemsCountFont = new Font(Fonts.fonts.Families[0], 25.0F, FontStyle.Bold);
 			itemsCountBrush = new SolidBrush(Color.White);
 		}
+		public bool CheckIfPlayerSlot(Slot s)
+		{
+			return GetRowAndColumnFromSlot(s).row >= rows - playerRows;
+		}
+		public void ClearChestSlots()
+        {
+			for (int j = 0; j < chestRows; j++)
+				for (int i = 0; i < columns; i++)
+					slots[i][j].SetItem(null, 0);
+		}
+		public void SaveChest(GameObjects.GameObject.ChestObject chest)
+        {
+			for (int j = 0; j < chestRows; j++)
+				for (int i = 0; i < columns; i++)
+					if (slots[i][j].currentItem != null)
+						chest.container.Add((slots[i][j], slots[i][j].currentItem, slots[i][j].itemsCount));
+		}
 		public void ReceiveItems(Item item, int count = 1)
 		{
-			for (int j = rows - 1; j > 0; j--)
+			for (int j = rows - 1; j > playerRows; j--)
 				for (int i = 0; i < columns; i++)
 					if (slots[i][j].currentItem == null)
 					{
@@ -188,11 +210,10 @@ namespace Game.Controllers
 					ReceiveItems(item, remaining);
 				}
 			}
-			return;
 		}
 		public bool HasEnoughItems(Item item, int count)
 		{
-			for (int j = rows - 1; j > 0; j--)
+			for (int j = rows - 1; j > playerRows; j--)
 				for (int i = 0; i < columns; i++)
 					if (slots[i][j].currentItem != null && 
 						slots[i][j].currentItem.itemName == item.itemName)
@@ -205,11 +226,11 @@ namespace Game.Controllers
 		{
 			if (!HasEnoughItems(item, count))
 				return false;
-			for (int j = 0; j < rows; j++)
+			for (int j = playerRows; j < rows; j++)
 				for (int i = 0; i < columns; i++)
 					if (slots[i][j].currentItem != null && 
 						slots[i][j].currentItem.itemName == item.itemName)
-                    {
+					{
 						int canWithdrawFromhere = slots[i][j].itemsCount - MathOperations.MoveTowards(slots[i][j].itemsCount, 0, count);
 						count -= canWithdrawFromhere;
 						if ((slots[i][j].itemsCount -= canWithdrawFromhere) <= 0)
@@ -226,7 +247,7 @@ namespace Game.Controllers
 				return false;
 
 			if ((slot.itemsCount -= slot.itemsCount - MathOperations.MoveTowards(slot.itemsCount, 0, count)) <= 0)
-            {
+			{
 				slot.SetItem(null, 0);
 				return true;
 			}
@@ -235,7 +256,7 @@ namespace Game.Controllers
 		}
 		public Slot GetSlotByRowAndColumn((int row, int column) slot) => slots[slot.column][slot.row];
 		public (int row, int column) GetRowAndColumnFromSlot(Slot slot)
-        {
+		{
 			for (int j = 0; j < rows; j++)
 				for (int i = 0; i < columns; i++)
 					if (slots[i][j] == slot)
@@ -251,7 +272,7 @@ namespace Game.Controllers
 			bool mouseWasInsideSlot = false;
 
 			switch (displayMode)
-            {
+			{
 				case InventoryDisplayMode.DoNotDisplay:
 					break;
 				case InventoryDisplayMode.HotbarOnly:
@@ -334,9 +355,9 @@ namespace Game.Controllers
 							}
 						}
 					break;
-				case InventoryDisplayMode.WholeCenterAligned:
+				case InventoryDisplayMode.PlayerOnly:
 					for (int i = 0; i < columns; i++)
-						for (int j = 0; j < rows; j++)
+						for (int j = playerRows; j < rows; j++)
 						{
 							slotDestRect = slots[i][j].screenRect;
 
@@ -414,11 +435,13 @@ namespace Game.Controllers
 							}
 						}
 					break;
-				case InventoryDisplayMode.WholeLeftAligned:
+				case InventoryDisplayMode.Whole:
 					for (int i = 0; i < columns; i++)
 						for (int j = 0; j < rows; j++)
 						{
 							slotDestRect = slots[i][j].screenRect;
+							if (j < chestRows)
+								slotDestRect.Y -= 15;
 
 							if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
 							{
@@ -499,7 +522,7 @@ namespace Game.Controllers
 			if (draggingItemFromSlot != null && 
 				draggingItemFromSlot.currentItem != null && 
 				!mouseWasInsideSlot)
-            {
+			{
 				if (GameController.Instance.mouseIsDown)
 				{
 					itemDestRect.X = GameController.Instance.mousePosition.X - 16;
@@ -509,13 +532,13 @@ namespace Game.Controllers
 						itemDestRect,
 						itemTrashIcon);
 				}
-                else
-                {
+				else
+				{
 					draggingItemFromSlot.TrashItem();
 					draggingItemFromSlot = null;
 					isDraggingItem = false;
 				}
 			}
 		}
-    }
+	}
 }

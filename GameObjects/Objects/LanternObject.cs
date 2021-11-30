@@ -1,6 +1,4 @@
 ﻿using Game.Controllers;
-using Game.GameObjects.Creatures;
-using Game.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,30 +11,22 @@ namespace Game.GameObjects
 {
     public abstract partial class GameObject
     {
-        private class Hero : Creature
+        private sealed class LanternObject : LightingObject
         {
-            public Hero(
-                int _x, 
-                int _y, 
-                byte[] additionalInformation = null) : base(_x, _y, 1, "creature_hero", MapController.Instance.heroSheet, additionalInformation)
+            public LanternObject(int _x, int _y, byte[] additionalInformation = null) : 
+                base(_x, _y, 103, "obj_lantern", MapController.Instance.objectsSheet, additionalInformation)
             {
                 destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
                 srcRect = new Rectangle(0, 0, 16, 16);
-                visualMovementSpeed = 10;
                 isDespawnable = true;
-                canWalkOn = WalkType.GroundOnly;
-
-				maxActionsCount = 20;
-                maxHealth = currentHealth = 100;
-                damageAmount = 25;
 
                 Start();
             }
 
             public override void Render()
             {
-                destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
-                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y);
+                destRect.X = (int)(x * Constants.TILE_SIZE + MapController.Instance.camera.x);
+                destRect.Y = (int)(y * Constants.TILE_SIZE + MapController.Instance.camera.y);
                 GameController.Instance.Render(sprite, destRect, srcRect);
             }
 
@@ -52,7 +42,7 @@ namespace Game.GameObjects
 
             public override void Update()
             {
-                MoveToVisual();
+
             }
 
             public override void PostUpdate()

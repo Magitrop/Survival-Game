@@ -62,6 +62,7 @@ namespace Game.Controllers
 
 		public string currentSavePath;
 		public List<SavedChunkInfo> savedChunks;
+		public GameObject.ChestObject currentChest = null;
 		public float pause { get; private set; }
 
 		public int currentFPS;
@@ -82,6 +83,7 @@ namespace Game.Controllers
 
 			MapController.Instance.Start();
 			InventoryController.Instance.Start();
+			LightingController.Instance.NextDayPart();
 
 			if (!LoadGame("save"))
 			{
@@ -97,6 +99,7 @@ namespace Game.Controllers
 			(MapController.Instance.camera = new Camera(mainHero.x, mainHero.y)).target = mainHero;
 			MoveHero(999999, 999999, true);
 			MoveHero(-999999, -999999, true);
+			LightingController.Instance.GenerateLighting();
 
 			currentObjectIndex = 0;
 		}
@@ -126,13 +129,12 @@ namespace Game.Controllers
 				if (MainWindow.radius <= 2)
 					Application.Exit();
 			}
+			MapController.Instance.camera.CameraFollow();
 			MapController.Instance.PreUpdate();
 			InventoryController.Instance.PreUpdate();
 
-			var chunks = MapController.Instance.visibleChunks;
-			for (int i = 0; i < chunks.Count; i++)
-				chunks[i].RenderObjects();
-
+			byte actionWithTile = 0;
+			Rectangle rect, src;
 			if (!MainWindow.DrawWindowClosingAnimation &&
 				!(!MapController.Instance.camera.cameraFinishedMovement ||
 				currentObject != mainHero ||
@@ -149,7 +151,7 @@ namespace Game.Controllers
 					currentTileSelection.Y = (int)Math.Truncate(_y - 1);
 				else currentTileSelection.Y = (int)Math.Truncate(_y);
 
-				Rectangle rect = new Rectangle
+				rect = new Rectangle
 				(
 					(int)(currentTileSelection.X * Constants.TILE_SIZE + MapController.Instance.camera.x)
 						/*(int)(Math.Truncate((mousePosition.X - Constants.TEXTURE_RESOLUTION / 2) / Constants.TILE_SIZE +
@@ -162,34 +164,47 @@ namespace Game.Controllers
 					(int)Constants.TILE_SIZE,
 					(int)Constants.TILE_SIZE
 				);
-				Rectangle src;
+
 				Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
 				if (MathOperations.Distance((currentTileSelection.X, currentTileSelection.Y), mainHero.coords) < 2)
-				{
-					if (mouseIsDown && 
-						InventoryController.Instance.currentSlot.currentItem != null && 
-						InventoryController.Instance.currentSlot.currentItem.isPlaceable)
-					{
-						if (selectedTile.gameObject == null)
-							if (InventoryController.Instance.currentSlot.currentItem.OnItemPlacing(selectedTile, mainHero))
-								InventoryController.Instance.WithdrawItemsFromSlot(
-									InventoryController.Instance.currentSlot, 
-									InventoryController.Instance.currentSlot.currentItem, 1);
-					}
 					src = new Rectangle(
-						7 * Constants.TEXTURE_RESOLUTION, 
+						7 * Constants.TEXTURE_RESOLUTION,
+						2 * Constants.TEXTURE_RESOLUTION,
+						Constants.TEXTURE_RESOLUTION,
+						Constants.TEXTURE_RESOLUTION);
+				else src = new Rectangle(
+						8 * Constants.TEXTURE_RESOLUTION, 
 						2 * Constants.TEXTURE_RESOLUTION, 
 						Constants.TEXTURE_RESOLUTION, 
 						Constants.TEXTURE_RESOLUTION);
-				}
-				else src = new Rectangle(
-					8 * Constants.TEXTURE_RESOLUTION, 
-					2 * Constants.TEXTURE_RESOLUTION, 
-					Constants.TEXTURE_RESOLUTION, 
-					Constants.TEXTURE_RESOLUTION);
-                if (InventoryController.Instance.currentSlot.currentItem != null || (selectedTile.gameObject as Creature) != null)
+
+				if (InventoryController.Instance.currentSlot.currentItem?.isPlaceable == true)
+                {
 					Render(MapController.Instance.tilesSheet, rect, src);
+					// на клетке стоит нет объекта (можно строить)
+					actionWithTile = 4;
+				}
+				else if (selectedTile.gameObject != null)
+				{
+					if (selectedTile.gameObject.objectName == "obj_fence_gate")
+						// на клетке стоит дверь (войти/выйти)
+						actionWithTile = 1;
+					else if (selectedTile.gameObject.objectName == "obj_chest")
+						// на клетке стоит сундук (открыть)
+						actionWithTile = 5;
+					else if ((selectedTile.gameObject as Creature) != null && selectedTile.gameObject != mainHero)
+						// на клетке стоит существо (атака)
+						actionWithTile = 2;
+					else if ((selectedTile.gameObject as BreakableObject) != null)
+						// на клетке стоит объект (разрушить)
+						actionWithTile = 3;
+					Render(MapController.Instance.tilesSheet, rect, src);
+				}
 			}
+
+			var chunks = MapController.Instance.visibleChunks;
+			for (int i = 0; i < chunks.Count; i++)
+				chunks[i].RenderObjects();
 
 			if (pause <= 0)
 				for (int i = 0; i < objectsQueue.Count;)
@@ -211,8 +226,89 @@ namespace Game.Controllers
 			else pause -= Time.deltaTime;
 
 			MapController.Instance.PostUpdate();
+			if (actionWithTile > 0)
+			{
+				rect = new Rectangle
+				(
+					(int)((currentTileSelection.X + 1) * Constants.TILE_SIZE + MapController.Instance.camera.x),
+					(int)(currentTileSelection.Y * Constants.TILE_SIZE + MapController.Instance.camera.y),
+					(int)(Constants.TILE_SIZE * 0.5f),
+					(int)(Constants.TILE_SIZE * 0.5f)
+				);
+				src = new Rectangle
+				(
+					(actionWithTile - 1) * Constants.TEXTURE_RESOLUTION,
+					2 * Constants.TEXTURE_RESOLUTION,
+					Constants.TEXTURE_RESOLUTION,
+					Constants.TEXTURE_RESOLUTION
+				);
+				Render(MapController.Instance.uiSheet, rect, src);
+				if (MathOperations.Distance((currentTileSelection.X, currentTileSelection.Y), mainHero.coords) < 2)
+				{
+					if (mouseIsDown)
+					{
+						Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
+						switch (actionWithTile)
+						{
+							// войти в дверь
+							case 1:
+								// предполагается, что на клетке есть дверь
+								
+								break;
+							// атаковать
+							case 2:
+								// предполагается, что на клетке есть существо
+								Creature.DealDamage((Creature)selectedTile.gameObject, (Creature)mainHero, ((Creature)mainHero).damageAmount);
+								Debug.WriteLine(((Creature)selectedTile.gameObject).currentHealth);
+								mouseIsDown = false;
+								break;
+							// разрушить
+							case 3:
+								// предполагается, что на клетке есть разрушаемый объект
+								if ((selectedTile.gameObject as BreakableObject)?.Break(mainHero, 1) == true)
+                                {
+									int index;
+									if ((index = LightingController.Instance.lightingObjects.FindIndex(g => g.coords == selectedTile.gameObject.coords)) >= 0)
+										LightingController.Instance.lightingObjects.RemoveAt(index);
+									selectedTile.SetGameObject(null);
+									LightingController.Instance.GenerateLighting();
+								}
+								else
+                                {
+									var l = selectedTile.gameObject.objectAdditionalInformation.ToList();
+									if (l.Count < 2)
+										l.Add((selectedTile.gameObject as BreakableObject).durability);
+									else l[1] = (selectedTile.gameObject as BreakableObject).durability;
+									selectedTile.gameObject.objectAdditionalInformation = l.ToArray();
+								}
+								selectedTile.chunk.UpdateTile(selectedTile.x, selectedTile.y);
+								mouseIsDown = false;
+								break;
+							// строить
+							case 4:
+								// предполагается, что слот не пуст и предмет является размещаемым
+								if (selectedTile.gameObject == null)
+									if (InventoryController.Instance.currentSlot.currentItem.OnItemPlacing(selectedTile, mainHero))
+										InventoryController.Instance.WithdrawItemsFromSlot(
+											InventoryController.Instance.currentSlot,
+											InventoryController.Instance.currentSlot.currentItem, 1);
+								if (InventoryController.Instance.currentSlot.currentItem == null)
+									mouseIsDown = false;
+								break;
+							// открыть сундук
+							case 5:
+								// предполагается, что на клетке стоит сундук
+								InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.Whole;
+								currentChest?.CloseChest();
+								(selectedTile.gameObject as GameObject.ChestObject)?.OpenChest();
+								mouseIsDown = false;
+								break;
+						}
+					}
+				}
+			}
+
 			InventoryController.Instance.PostUpdate();
-			MapController.Instance.camera.CameraFollow();
 		}
 
 		public void Spawn(TurnBasedObject objectToSpawn)
@@ -246,16 +342,18 @@ namespace Game.Controllers
 						{
 							int playerX = int.Parse(info[1]);
 							int playerY = int.Parse(info[2]);
+							LightingController.Instance.SetCurrentDaytime(byte.Parse(info[3]) == 0 ? (byte)23 : (byte)(byte.Parse(info[3]) - 1));
+							LightingController.Instance.NextDayPart();
 							mainHero = GameObject.Spawn("creature_hero", playerX, playerY);
 							objectsQueue.Add((TurnBasedObject)mainHero);
-							for (int j = 3; j < info.Length; j += 4)
+							for (int j = 4; j < info.Length; j += 4)
 								InventoryController.Instance.AddItemsToSlot(
 									InventoryController.Instance.GetSlotByRowAndColumn((int.Parse(info[j]), int.Parse(info[j + 1]))),
 									Items.GetItemByID(int.Parse(info[j + 2])),
 									int.Parse(info[j + 3]));
 						}
 						else
-                        {
+						{
 							List<byte> _addInfo = new List<byte>();
 							for (int j = 3; j < info.Length; j++)
 								_addInfo.Add(byte.Parse(info[j]));
@@ -263,6 +361,7 @@ namespace Game.Controllers
 						}
 					}
 				}
+				objectsQueue.Reverse();
 				return true;
 			}
 			return false;
@@ -273,20 +372,21 @@ namespace Game.Controllers
 			Directory.CreateDirectory(Directory.GetCurrentDirectory() + "\\Saves");
 			List<string> saves = new List<string>();
 
+			objectsQueue = objectsQueue.OrderBy(o => o.objectID).ToList();
 			// кол-во существ на карте и их ID и координаты
 			saves.Add(objectsQueue.Count.ToString());
 			for (int i = 0; i < objectsQueue.Count; i++)
 				if (objectsQueue[i].objectID == 1)
 				{
-					string str = objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y;
+					string str = objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y + "," + LightingController.Instance.currentDaytime;
 					foreach (var slotColumn in InventoryController.Instance.slots)
 						foreach (var slot in slotColumn)
-							if (slot.currentItem != null)
+							if (InventoryController.Instance.CheckIfPlayerSlot(slot) && slot.currentItem != null)
 							{
-								(int row, int column) s = InventoryController.Instance.GetRowAndColumnFromSlot(slot);
+								(int row, int column) = InventoryController.Instance.GetRowAndColumnFromSlot(slot);
 								str += "," +
-									s.row + "," +
-									s.column + "," +
+									row + "," +
+									column + "," +
 									slot.currentItem.itemID + "," +
 									slot.itemsCount;
 							}
@@ -315,18 +415,26 @@ namespace Game.Controllers
 				InventoryController.Instance.currentSlotIndex = 9;
 
 			if (e.KeyCode == Keys.I)
+            {
+				currentChest?.CloseChest();
 				if (InventoryController.Instance.displayMode != InventoryController.InventoryDisplayMode.HotbarOnly)
 					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.HotbarOnly;
 				else
-					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.WholeCenterAligned;
+					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.PlayerOnly;
+			}
 
 			if (e.KeyCode == Keys.T)
 			{
+				InventoryController.Instance.ReceiveItems(Items.ItemChest.Instance);
+				InventoryController.Instance.ReceiveItems(Items.ItemLantern.Instance);
 				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFence.Instance);
 				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFenceGate.Instance);
 			}
 
-			if (!MapController.Instance.camera.cameraFinishedMovement || currentObject != mainHero || !mainHero.isMoving)
+			if (!MapController.Instance.camera.cameraFinishedMovement || 
+				currentObject != mainHero || 
+				!mainHero.isMoving ||
+				InventoryController.Instance.displayMode != InventoryController.InventoryDisplayMode.HotbarOnly)
 				return;
 
 			if (e.KeyCode == KeyBindings.MoveUp)
@@ -357,6 +465,7 @@ namespace Game.Controllers
 				t?.SetGameObject(null);
 				MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);*/
 				NextTurn();
+				LightingController.Instance.NextDayPart();
 			}
 
 			if (e.KeyCode == KeyBindings.SaveGame)
@@ -409,6 +518,14 @@ namespace Game.Controllers
 			renderQueue.Enqueue(new TextFrame(text, dest, font, br));
 		}
 
+		/// <summary>
+		/// Добавляет прямоугольник в очередь для рендера.
+		/// </summary>
+		public void Render(Brush br, Rectangle dest)
+		{
+			renderQueue.Enqueue(new RectFrame(br, dest));
+		}
+
 		public bool shouldDrawGrid = false;
 		private Pen gridPen = new Pen(Color.Red);
 		private Brush brush = new SolidBrush(Color.White);
@@ -423,7 +540,12 @@ namespace Game.Controllers
 			graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
 			foreach (var frame in renderQueue)
 			{
-				if (frame.GetFrameType() == "image")
+				if (frame.GetFrameType() == "rect")
+				{
+					RectFrame request = (RectFrame)frame;
+					graphics.FillRectangle(request.brush, request.destRect);
+				}
+				else if (frame.GetFrameType() == "image")
 				{
 					ImageFrame request = (ImageFrame)frame;
 					graphics.DrawImage(request.imageToRender, request.destRect, request.srcRect, GraphicsUnit.Pixel);

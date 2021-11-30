@@ -13,6 +13,13 @@ using Game.Miscellaneous;
 
 namespace Game.GameObjects
 {
+	public enum WalkType
+    {
+		GroundOnly,
+		WaterOnly,
+		Everywhere
+    }
+
 	public abstract partial class GameObject : IBehaviour
 	{
 		public readonly Image sprite;
@@ -22,6 +29,7 @@ namespace Game.GameObjects
 		public float visualX, visualY;
 		public float visualMovementSpeed = 5;
 		public bool isDespawnable;
+		public WalkType canWalkOn;
 
 		public bool isMoving
         {
@@ -37,7 +45,7 @@ namespace Game.GameObjects
 		public bool isVisible
         {
             get => 
-				MapController.Instance.HasChunk(x, y) &&	
+				/*MapController.Instance.HasChunk(x, y) &&	*/
 				MathOperations.Distance(coords, GameController.Instance.mainHero.coords) < 
 					Math.Max(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT) / (2 * Constants.TILE_SIZE);
         }
@@ -63,16 +71,36 @@ namespace Game.GameObjects
 			objectAdditionalInformation = additionalInformation ?? new byte[] { (byte)objectID };
 		}
 
-		public virtual void OnSpawn() { }
-		public virtual void OnDespawn() { }
+		protected virtual void OnSpawn() { }
+		protected virtual void OnDespawn() { }
 		public abstract void Update();
 		public abstract void Render();
+		public bool CanStepOn(int tileType)
+        {
+			switch (canWalkOn)
+            {
+				case WalkType.Everywhere: return true;
+				case WalkType.WaterOnly: return tileType <= 2;
+				case WalkType.GroundOnly: return tileType > 2;
+			}
+			return true;
+        }
+		public static bool CanStepOn(WalkType canWalkOn, int tileType)
+		{
+			switch (canWalkOn)
+			{
+				case WalkType.Everywhere: return true;
+				case WalkType.WaterOnly: return tileType <= 2;
+				case WalkType.GroundOnly: return tileType > 2;
+			}
+			return true;
+		}
 		public bool MoveTo(int _x, int _y, bool byForce = false)
 		{
 			if (MapController.Instance.HasChunk(_x, _y))
             {
 				Tile moveTo = MapController.Instance.GetTile(_x, _y);
-				if (moveTo.gameObject != null && !byForce)
+				if ((moveTo.gameObject != null || !CanStepOn(moveTo.tileType)) && !byForce)
 					return false;
 				MapController.Instance.GetTile(x, y).SetGameObject(null);
 				x = _x;
@@ -87,6 +115,7 @@ namespace Game.GameObjects
 				x = _x;
 				y = _y;
 			}
+			LightingController.Instance.GenerateLighting();
 			return true;
 		}
 
@@ -132,9 +161,12 @@ namespace Game.GameObjects
             {
 				case 1: return Spawn(new Hero(atX, atY, additionalInformation));
 				case 2: return Spawn(new TestCreature(atX, atY, additionalInformation));
-				case 100: return Spawn(new Tree(atX, atY, additionalInformation));
+				case 100: return Spawn(new PineTreeObject(atX, atY, additionalInformation));
 				case 101: return Spawn(new WallObject(atX, atY, additionalInformation));
 				case 102: return Spawn(new FenceGateObject(atX, atY, additionalInformation));
+				case 103: return Spawn(new LanternObject(atX, atY, additionalInformation));
+				case 104: return Spawn(new ChestObject(atX, atY, additionalInformation));
+				case 105: return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
 				default:
 					return null;
             }
@@ -146,9 +178,12 @@ namespace Game.GameObjects
 			{
 				case "creature_hero": return Spawn(new Hero(atX, atY, additionalInformation));
 				case "creature_test": return Spawn(new TestCreature(atX, atY, additionalInformation));
-				case "obj_tree": return Spawn(new Tree(atX, atY, additionalInformation));
+				case "obj_pine_tree": return Spawn(new PineTreeObject(atX, atY, additionalInformation));
 				case "obj_wall": return Spawn(new WallObject(atX, atY, additionalInformation));
 				case "obj_fence_gate": return Spawn(new FenceGateObject(atX, atY, additionalInformation));
+				case "obj_lantern": return Spawn(new LanternObject(atX, atY, additionalInformation));
+				case "obj_chest": return Spawn(new ChestObject(atX, atY, additionalInformation));
+				case "obj_palm_tree": return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
 				default:
 					return null;
 			}
@@ -160,9 +195,12 @@ namespace Game.GameObjects
 			{
 				case 1: return "creature_hero";
 				case 2: return "creature_test";
-				case 100: return "obj_tree";
+				case 100: return "obj_pine_tree";
 				case 101: return "obj_wall";
 				case 102: return "obj_fence_gate";
+				case 103: return "obj_lantern";
+				case 104: return "obj_chest";
+				case 105: return "obj_palm_tree";
 				default:
 					return "null";
 			}
@@ -174,9 +212,12 @@ namespace Game.GameObjects
 			{
 				case "creature_hero": return 1;
 				case "creature_test": return 2;
-				case "obj_tree": return 100;
+				case "obj_pine_tree": return 100;
 				case "obj_wall": return 101;
 				case "obj_fence_gate": return 102;
+				case "obj_lantern": return 103;
+				case "obj_chest": return 104;
+				case "obj_palm_tree": return 105;
 				default:
 					return 0;
 			}

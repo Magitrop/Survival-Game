@@ -36,6 +36,8 @@ namespace Game.Miscellaneous
 				case 1: return ItemWoodenLog.Instance;
 				case 2: return ItemWoodenFence.Instance;
 				case 3: return ItemWoodenFenceGate.Instance;
+				case 4: return ItemLantern.Instance;
+				case 5: return ItemChest.Instance;
 				default: return null;
 			};
 		}
@@ -47,6 +49,8 @@ namespace Game.Miscellaneous
 				case "item_wooden_log": return ItemWoodenLog.Instance;
 				case "item_wooden_fence": return ItemWoodenFence.Instance;
 				case "item_wooden_fence_gate": return ItemWoodenFenceGate.Instance;
+				case "item_lantern": return ItemLantern.Instance;
+				case "item_chest": return ItemChest.Instance;
 				default: return null;
 			};
 		}
@@ -149,7 +153,91 @@ namespace Game.Miscellaneous
 						"obj_fence_gate", 
 						placeAt.globalX, 
 						placeAt.globalY, 
-						new byte[] { (byte)GameObject.GetObjectIDByName("obj_fence_gate"), (byte)(sender?.x != placeAt.globalX ? 1 : 0) }));
+						new byte[] { (byte)GameObject.GetObjectIDByName("obj_fence_gate"), 1, (byte)(sender?.x != placeAt.globalX ? 1 : 0) }));
+				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
+				return true;
+			}
+		}
+
+		public sealed class ItemLantern : Item
+		{
+			// singleton
+			private ItemLantern()
+			{
+				itemID = 4;
+				itemName = "item_lantern";
+				itemSrcRect = new Rectangle(0, 0, 16, 16);
+
+				isPlaceable = true;
+				isConsumable = false;
+				maxStackQuantity = 100;
+			}
+			private static ItemLantern instance;
+			public static ItemLantern Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemLantern();
+					return instance;
+				}
+			}
+
+			public override bool OnItemPlacing(Tile placeAt, GameObject sender = null)
+			{
+				// нельзя ставить в воде
+				if (placeAt.tileType < 2)
+					return false;
+
+				GameObject obj;
+				placeAt.SetGameObject(
+					obj = GameObject.Spawn(
+						"obj_lantern",
+						placeAt.globalX,
+						placeAt.globalY,
+						new byte[] { (byte)GameObject.GetObjectIDByName("obj_lantern"), 1 }));
+				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
+				return true;
+			}
+		}
+
+		public sealed class ItemChest : Item
+		{
+			// singleton
+			private ItemChest()
+			{
+				itemID = 5;
+				itemName = "item_chest";
+				itemSrcRect = new Rectangle(3 * 16, 0, 16, 16);
+
+				isPlaceable = true;
+				isConsumable = false;
+				maxStackQuantity = 100;
+			}
+			private static ItemChest instance;
+			public static ItemChest Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemChest();
+					return instance;
+				}
+			}
+
+			public override bool OnItemPlacing(Tile placeAt, GameObject sender = null)
+			{
+				// нельзя ставить в воде
+				if (placeAt.tileType < 2)
+					return false;
+
+				GameObject obj;
+				placeAt.SetGameObject(
+					obj = GameObject.Spawn(
+						"obj_chest",
+						placeAt.globalX,
+						placeAt.globalY,
+						new byte[] { (byte)GameObject.GetObjectIDByName("obj_chest"), 1 }));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}

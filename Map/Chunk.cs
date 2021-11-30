@@ -40,15 +40,23 @@ namespace Game.Map
 					else if (height < 0.42f)
 						height = 2;
 					else if (height < 0.55f)
+					{
 						height = 3;
+						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.15f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_palm_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+					}
 					else if (height < 0.67f)
 					{
 						height = 4;
 						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.25f)
-							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_pine_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
 					}
 					else if (height < 0.8f)
+					{
 						height = 5;
+						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.2f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_pine_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+					}
 					else if (height < 0.94f)
 						height = 6;
 					else height = 7;
@@ -75,7 +83,10 @@ namespace Game.Map
 					(tile = tiles[t_coords.x, t_coords.y]).tileType = t.type;
 					// если на клетке есть объект и это не герой
 					if (t.additionalInformation.Length == 0 || t.additionalInformation[0] == 0)
-						tile.SetGameObject(null);
+					{
+						if (tile.gameObject?.objectID >= 100)
+							tile.SetGameObject(null);
+					}
 					else if (t.additionalInformation[0] > 1)
                     {
 						GameObject.Spawn(t.additionalInformation[0], tile.globalX, tile.globalY, t.additionalInformation);
@@ -99,12 +110,31 @@ namespace Game.Map
 				}
 		}
 
+		public void RenderLighting()
+		{
+			for (int x = 0; x < Constants.CHUNK_SIZE; x++)
+				for (int y = 0; y < Constants.CHUNK_SIZE; y++)
+				{
+					tiles[x, y].RenderLighting();
+				}
+		}
+
+		public void ResetLighting()
+		{
+			for (int x = 0; x < Constants.CHUNK_SIZE; x++)
+				for (int y = 0; y < Constants.CHUNK_SIZE; y++)
+				{
+					tiles[x, y].ResetLighting();
+				}
+		}
+
 		public void RenderObjects()
 		{
 			for (int x = 0; x < Constants.CHUNK_SIZE; x++)
 				for (int y = 0; y < Constants.CHUNK_SIZE; y++)
-					if (tiles[x, y].gameObject != null)
-						tiles[x, y].gameObject.Render();
+                {
+					tiles[x, y].gameObject?.Render();
+				}
 		}
 
 		public Tile GetTile(int coordX, int coordY)
@@ -129,6 +159,7 @@ namespace Game.Map
 					info.changedTiles.RemoveAt(index);
 				info.AddTile((byte)coordX, (byte)coordY, (byte)tile.tileType, tile.gameObject?.objectAdditionalInformation ?? new byte[]{ 0 });
 			}
+			LightingController.Instance.GenerateLighting();
 		}
 	}
 }
