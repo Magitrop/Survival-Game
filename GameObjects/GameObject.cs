@@ -162,9 +162,9 @@ namespace Game.GameObjects
 				case 1: return Spawn(new Hero(atX, atY, additionalInformation));
 				case 2: return Spawn(new TestCreature(atX, atY, additionalInformation));
 				case 100: return Spawn(new PineTreeObject(atX, atY, additionalInformation));
-				case 101: return Spawn(new WallObject(atX, atY, additionalInformation));
-				case 102: return Spawn(new FenceGateObject(atX, atY, additionalInformation));
-				case 103: return Spawn(new LanternObject(atX, atY, additionalInformation));
+				case 101: return Spawn(new WoodenFenceObject(atX, atY, additionalInformation));
+				case 102: return Spawn(new WoodenFenceGateObject(atX, atY, additionalInformation));
+				case 103: return Spawn(new BonfireObject(atX, atY, additionalInformation));
 				case 104: return Spawn(new ChestObject(atX, atY, additionalInformation));
 				case 105: return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
 				default:
@@ -179,9 +179,9 @@ namespace Game.GameObjects
 				case "creature_hero": return Spawn(new Hero(atX, atY, additionalInformation));
 				case "creature_test": return Spawn(new TestCreature(atX, atY, additionalInformation));
 				case "obj_pine_tree": return Spawn(new PineTreeObject(atX, atY, additionalInformation));
-				case "obj_wall": return Spawn(new WallObject(atX, atY, additionalInformation));
-				case "obj_fence_gate": return Spawn(new FenceGateObject(atX, atY, additionalInformation));
-				case "obj_lantern": return Spawn(new LanternObject(atX, atY, additionalInformation));
+				case "obj_wooden_fence": return Spawn(new WoodenFenceObject(atX, atY, additionalInformation));
+				case "obj_wooden_fence_gate": return Spawn(new WoodenFenceGateObject(atX, atY, additionalInformation));
+				case "obj_bonfire": return Spawn(new BonfireObject(atX, atY, additionalInformation));
 				case "obj_chest": return Spawn(new ChestObject(atX, atY, additionalInformation));
 				case "obj_palm_tree": return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
 				default:
@@ -196,9 +196,9 @@ namespace Game.GameObjects
 				case 1: return "creature_hero";
 				case 2: return "creature_test";
 				case 100: return "obj_pine_tree";
-				case 101: return "obj_wall";
-				case 102: return "obj_fence_gate";
-				case 103: return "obj_lantern";
+				case 101: return "obj_wooden_fence";
+				case 102: return "obj_wooden_fence_gate";
+				case 103: return "obj_bonfire";
 				case 104: return "obj_chest";
 				case 105: return "obj_palm_tree";
 				default:
@@ -213,9 +213,9 @@ namespace Game.GameObjects
 				case "creature_hero": return 1;
 				case "creature_test": return 2;
 				case "obj_pine_tree": return 100;
-				case "obj_wall": return 101;
-				case "obj_fence_gate": return 102;
-				case "obj_lantern": return 103;
+				case "obj_wooden_fence": return 101;
+				case "obj_wooden_fence_gate": return 102;
+				case "obj_bonfire": return 103;
 				case "obj_chest": return 104;
 				case "obj_palm_tree": return 105;
 				default:

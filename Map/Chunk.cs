@@ -79,7 +79,7 @@ namespace Game.Map
 				for (int i = 0; i < count; i++)
 				{
 					t = info.changedTiles[i];
-					t_coords = info.GetTile(t.coords);
+					t_coords = SavedChunkInfo.GetTile(t.coords);
 					(tile = tiles[t_coords.x, t_coords.y]).tileType = t.type;
 					// если на клетке есть объект и это не герой
 					if (t.additionalInformation.Length == 0 || t.additionalInformation[0] == 0)

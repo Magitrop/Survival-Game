@@ -35,8 +35,12 @@ namespace Game.GameObjects
 
             public override void Render()
             {
+                if (isFacingRight)
+                    srcRect.X = 0;
+                else
+                    srcRect.X = 16;
                 destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
-                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y);
+                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y - 0.25f * Constants.TILE_SIZE);
                 GameController.Instance.Render(sprite, destRect, srcRect);
             }
 

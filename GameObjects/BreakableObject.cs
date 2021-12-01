@@ -12,6 +12,8 @@ namespace Game.GameObjects
 	public abstract class BreakableObject : GameObject
 	{
 		public byte durability;
+		public byte maxDurability;
+		public ToolType shouldBeBrokenWith;
 
 		protected BreakableObject(
 			int _x,
@@ -19,23 +21,18 @@ namespace Game.GameObjects
 			int ID,
 			string name,
 			Image _sprite,
-			byte[] additionalInformation = null) : base(_x, _y, ID, name, _sprite, additionalInformation) 
+			byte[] additionalInformation = null) : base(_x, _y, ID, name, _sprite, additionalInformation) { }
+		public bool Break(GameObject breaker, byte force, ToolType wasBrokenWith)
 		{
-			//Debug.WriteLine(additionalInformation?.Length);
-			if (additionalInformation != null && additionalInformation.Length > 1)
-				durability = additionalInformation[1];
-			else
-				durability = 5;
-		}
-		public bool Break(GameObject breaker, byte force)
-		{
+			if (force > 1 && wasBrokenWith != shouldBeBrokenWith)
+				force = 1;
 			if ((durability = MathOperations.MoveTowards(durability, (byte)0, force)) == 0)
 			{
-				OnBreak(breaker);
+				OnBreak(breaker, wasBrokenWith);
 				return true;
 			}
 			return false;
 		}
-		protected virtual void OnBreak(GameObject breaker) { }
+		protected virtual void OnBreak(GameObject breaker, ToolType wasBrokenWith) { }
 	}
 }

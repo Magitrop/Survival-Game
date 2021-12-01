@@ -50,13 +50,12 @@ namespace Game.Controllers
 
 			public void UseItem()
 			{
-				if (currentItem != null)
+				if ((currentItem as Item.IUsable) != null)
 				{
-					currentItem.OnItemUse();
-					if (currentItem.isConsumable)
-						if (currentItem.usesLeft-- < 0)
-							if (--itemsCount <= 0)
-								SetItem(null, 0);
+					(currentItem as Item.IUsable).OnItemUse();
+					if ((currentItem as Item.IUsable).usesLeft-- < 0)
+						if (--itemsCount <= 0)
+							SetItem(null, 0);
 				}
 			}
 
@@ -173,6 +172,8 @@ namespace Game.Controllers
 		}
 		public void ReceiveItems(Item item, int count = 1)
 		{
+			if (count < 1)
+				return;
 			for (int j = rows - 1; j > playerRows; j--)
 				for (int i = 0; i < columns; i++)
 					if (slots[i][j].currentItem == null)
@@ -197,6 +198,8 @@ namespace Game.Controllers
 		}
 		public void AddItemsToSlot(Slot slot, Item item, int count = 1)
 		{
+			if (count < 1)
+				return;
 			if (slot.currentItem == null)
 				slot.SetItem(item, count);
 			else if (slot.currentItem.itemName == item.itemName && slot.itemsCount < slot.currentItem.maxStackQuantity)
@@ -224,6 +227,8 @@ namespace Game.Controllers
 		}
 		public bool WithdrawItems(Item item, int count)
 		{
+			if (count < 1)
+				return true;
 			if (!HasEnoughItems(item, count))
 				return false;
 			for (int j = playerRows; j < rows; j++)
@@ -241,6 +246,8 @@ namespace Game.Controllers
 		}
 		public bool WithdrawItemsFromSlot(Slot slot, Item item, int count)
 		{
+			if (count < 1)
+				return true;
 			if (slot.currentItem == null ||
 				slot.currentItem.itemName != item.itemName ||
 				slot.itemsCount < count)

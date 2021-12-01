@@ -61,7 +61,7 @@ namespace Game.Miscellaneous
 			changedTiles.Add(curChange);
 		}
 
-		public (int, int) GetTile(byte coords)
+		public static (int x, int y) GetTile(byte coords)
 		{
 			//                        y     x
 			// x => первые 3 бита  00 |000| |000|

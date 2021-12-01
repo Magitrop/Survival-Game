@@ -23,6 +23,12 @@ namespace Game.GameObjects
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(4 * 16, 0, 16, 16);
 				isDespawnable = true;
+				maxDurability = 3;
+                shouldBeBrokenWith = ToolType.Axe;
+				if (additionalInformation != null && additionalInformation.Length > 1)
+					durability = additionalInformation[1];
+				else
+					durability = maxDurability;
 
 				if (additionalInformation != null)
 					for (int i = 2; i < additionalInformation.Length; i += 4)
@@ -34,6 +40,19 @@ namespace Game.GameObjects
 							));
 
 				Start();
+			}
+
+			protected override void OnBreak(GameObject breaker, ToolType wasBrokenWith)
+			{
+				base.OnBreak(breaker, wasBrokenWith);
+				if (breaker as Hero != null)
+				{
+					if (wasBrokenWith == shouldBeBrokenWith)
+						InventoryController.Instance.ReceiveItems(Items.ItemLantern.Instance, 1);
+					else
+						InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance, new Random().Next(1, 5));
+					InventoryController.Instance.ReceiveItems(Items.ItemEmberPiece.Instance, new Random().Next(0, 2));
+				}
 			}
 
 			public void OpenChest()
