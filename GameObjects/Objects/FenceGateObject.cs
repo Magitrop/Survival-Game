@@ -12,18 +12,27 @@ namespace Game.GameObjects
 {
 	public abstract partial class GameObject
 	{
-		private sealed class FenceGateObject : GameObject
+		private sealed class FenceGateObject : BreakableObject
 		{
-			public FenceGateObject(int _x, int _y) : base(_x, _y, 102, "obj_fencegate", MapController.Instance.objectsSheet)
+			public FenceGateObject(
+				int _x, 
+				int _y, 
+				byte[] additionalInformation = null) : base(_x, _y, 102, "obj_fence_gate", MapController.Instance.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
-				srcRect = new Rectangle(16 * 4, 16 * 2, 16, 16);
+
+				// калитка повернута боком
+				if (additionalInformation != null && additionalInformation.Length > 2 && additionalInformation[2] == 1)
+					srcRect = new Rectangle(16 * 4, 16 * 3, 16, 16);
+				else 
+					srcRect = new Rectangle(16 * 4, 16 * 2, 16, 16);
+
 				isDespawnable = true;
 
 				Start();
 			}
 
-            public override void OnSpawn()
+            protected override void OnSpawn()
             {
                 base.OnSpawn();
 				FindRoom();
@@ -90,7 +99,6 @@ namespace Game.GameObjects
 						MapController.Instance.GetChunk(tile.globalX, tile.globalY).UpdateTile(tile.x, tile.y);
 					}
 				}
-
 				bool CheckTileInsideRoom(Point at, bool isPlacedVertical, List<Tile> perimeter, Point min, Point max)
 				{
 					/*if (MapController.Instance.GetTile(at.X, at.Y)?.gameObject != null)

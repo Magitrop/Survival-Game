@@ -13,7 +13,7 @@ namespace Game.GameObjects
     {
         private sealed class Tree : GameObject
         {
-            public Tree(int _x, int _y) : base(_x, _y, 100, "obj_tree", MapController.Instance.objectsSheet)
+            public Tree(int _x, int _y, byte[] additionalInformation = null) : base(_x, _y, 100, "obj_tree", MapController.Instance.objectsSheet, additionalInformation)
             {
                 destRect = new Rectangle(0, 0, (int)(Constants.TILE_SIZE * 1.5f), (int)(Constants.TILE_SIZE * 2f));
                 srcRect = new Rectangle(103, 0, 24, 32);

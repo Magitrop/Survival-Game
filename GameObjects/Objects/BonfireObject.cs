@@ -45,7 +45,7 @@ namespace Game.GameObjects
 				if (breaker as Hero != null)
 				{
 					if (wasBrokenWith == shouldBeBrokenWith)
-						InventoryController.Instance.ReceiveItems(Items.ItemLantern.Instance, 1);
+						InventoryController.Instance.ReceiveItems(Items.ItemBonfire.Instance, 1);
 					else
 						InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance, new Random().Next(1, 5));
 					InventoryController.Instance.ReceiveItems(Items.ItemEmberPiece.Instance, new Random().Next(0, 2));

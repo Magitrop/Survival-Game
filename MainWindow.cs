@@ -57,7 +57,7 @@ namespace Game
 			Fonts.fonts.AddMemoryFont(fontPtr, Properties.Resources.font_1.Length);
 			Fonts.AddFontMemResourceEx(fontPtr, (uint)Properties.Resources.font_1.Length, IntPtr.Zero, ref dummy);
 			System.Runtime.InteropServices.Marshal.FreeCoTaskMem(fontPtr);
-			Fonts.font_1 = new Font(Fonts.fonts.Families[0], 32.0F);
+			Fonts.font_1 = new Font(Fonts.fonts.Families[0], 32.0F, FontStyle.Bold);
 
 			GameController.Instance.Start();
 		}
@@ -69,19 +69,21 @@ namespace Game
 
 		private void OnMouseDown(object sender, MouseEventArgs e)
 		{
-			GameController.Instance.OnMouseDown(sender, e);
+			if (e.Button == MouseButtons.Left)
+				GameController.Instance.OnMouseDown(sender, e);
 		}
 
 		private void OnMouseUp(object sender, MouseEventArgs e)
 		{
-			GameController.Instance.OnMouseUp(sender, e);
+			if (e.Button == MouseButtons.Left)
+				GameController.Instance.OnMouseUp(sender, e);
 		}
 
 		List<PointF> points = new List<PointF>();
 		public static int n = 5;
 		public static float curAngle;
 		public static float radius = 1200;
-		public static bool DrawAnimation = false;
+		public static bool DrawWindowClosingAnimation = false;
 		private void OnPaint(object sender, PaintEventArgs e)
 		{
 			/*GraphicsPath g = new GraphicsPath();
@@ -94,7 +96,7 @@ namespace Game
 					));
 			g.AddPolygon(points.ToArray());
 			Region = new Region(g);*/
-			if (DrawAnimation)
+			if (DrawWindowClosingAnimation)
 			{
 				GraphicsPath g = new GraphicsPath();
 				g.AddEllipse(new RectangleF(

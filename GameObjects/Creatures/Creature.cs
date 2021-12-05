@@ -15,8 +15,18 @@ namespace Game.GameObjects.Creatures
 		public int currentHealth;
 		public int damageAmount;
 		public bool isAlive;
+		public bool isFacingRight;
 
-		protected Creature(int _x, int _y, int ID, string name, Image _sprite) : base(_x, _y, ID, name, _sprite) { }
+		protected Creature(
+			int _x, 
+			int _y, 
+			int ID, 
+			string name, 
+			Image _sprite, 
+			byte[] additionalInformation = null) : base(_x, _y, ID, name, _sprite, additionalInformation) 
+		{
+			isFacingRight = Convert.ToBoolean(new Random((x, y).GetHashCode()).Next(0, 2));
+		}
 
 		public static bool DealDamage(Creature target, Creature sender, int amount)
         {

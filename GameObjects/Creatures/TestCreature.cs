@@ -1,6 +1,7 @@
 ﻿using Game.Controllers;
 using Game.GameObjects.Creatures;
 using Game.Interfaces;
+using Game.Map;
 using Game.Miscellaneous;
 using System;
 using System.Collections.Generic;
@@ -20,13 +21,17 @@ namespace Game.GameObjects
 			private List<(int x, int y)> currentPath;
 			private int currentPathIndex;
 
-			public TestCreature(int _x, int _y) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet)
+			public TestCreature(
+				int _x, 
+				int _y, 
+				byte[] additionalInformation = null) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(32, 32, 16, 16);
 				isDespawnable = true;
+				canWalkOn = WalkType.GroundOnly;
 
-				maxActionsCount = 20;
+				maxActionsCount = 10;
 				maxHealth = currentHealth = 100;
 				damageAmount = 10;
 
@@ -54,7 +59,7 @@ namespace Game.GameObjects
 			{
 				base.OnTurnStart();
 				currentTarget = GameController.Instance.mainHero as Creature;
-				currentPath = MapController.Instance.FindPath(coords, currentTarget.coords);
+				currentPath = MapController.Instance.FindPath(coords, currentTarget.coords, canWalkOn);
 				currentPathIndex = 0;
 			}
 
@@ -69,7 +74,6 @@ namespace Game.GameObjects
 							GameController.Instance.NextTurn();
 							return;
 						}
-						actionsLeft--;
 						if (currentPath != null && currentPath.Count > 0)
 							if (MapController.Instance.GetTile(
 								currentPath[currentPathIndex].x, 
@@ -80,6 +84,7 @@ namespace Game.GameObjects
 									if (isVisible)
 										GameController.Instance.SetPause(0.25f);
 									currentPathIndex++;
+									actionsLeft -= Tile.GetTileTypePathPrice(MapController.Instance.GetTile(x, y).tileType);
 								}
 							}
 							else
