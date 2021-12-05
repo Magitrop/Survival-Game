@@ -13,8 +13,8 @@ namespace Game
         public const int TEXTURE_RESOLUTION = 16;
         public const int CHUNK_SIZE = 4;
         public const int RENDER_DISTANCE = 2;
-        public const int WINDOW_WIDTH = 1200;
-        public const int WINDOW_HEIGHT = 700;
+        public const int WINDOW_WIDTH = 900;
+        public const int WINDOW_HEIGHT = 900;
         public const float TILE_SIZE = ZOOM * TEXTURE_RESOLUTION;
         public const float OBJECTS_DESPAWN_RANGE = CHUNK_SIZE * RENDER_DISTANCE * 20f;
     }

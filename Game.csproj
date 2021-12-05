@@ -51,23 +51,16 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Controllers\GameController.cs" />
     <Compile Include="Controllers\InventoryController.cs" />
-    <Compile Include="Controllers\LightingController.cs" />
     <Compile Include="Controllers\MapController.cs" />
     <Compile Include="Fonts.cs" />
     <Compile Include="GameObjects\Creatures\Creature.cs" />
     <Compile Include="GameObjects\Creatures\Hero.cs" />
     <Compile Include="GameObjects\Creatures\TestCreature.cs" />
     <Compile Include="GameObjects\GameObject.cs" />
-    <Compile Include="GameObjects\BreakableObject.cs" />
-    <Compile Include="GameObjects\LightingObject.cs" />
-    <Compile Include="GameObjects\Objects\ChestObject.cs" />
-    <Compile Include="GameObjects\Objects\WoodenFenceGateObject.cs" />
-    <Compile Include="GameObjects\Objects\BonfireObject.cs" />
-    <Compile Include="GameObjects\Objects\PalmTreeObject.cs" />
-    <Compile Include="GameObjects\Objects\PineTreeObject.cs" />
-    <Compile Include="GameObjects\Objects\WoodenFenceObject.cs" />
+    <Compile Include="GameObjects\Objects\FenceGateObject.cs" />
+    <Compile Include="GameObjects\Objects\Tree.cs" />
+    <Compile Include="GameObjects\Objects\WallObject.cs" />
     <Compile Include="GameObjects\TurnBasedObject.cs" />
-    <Compile Include="Interfaces\IAnimatable.cs" />
     <Compile Include="KeyBindings.cs" />
     <Compile Include="MainWindow.cs">
       <SubType>Form</SubType>
