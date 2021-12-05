@@ -15,18 +15,13 @@ namespace Game.GameObjects
     {
         private class Hero : Creature
         {
-            public Hero(
-                int _x, 
-                int _y, 
-                byte[] additionalInformation = null) : base(_x, _y, 1, "creature_hero", MapController.Instance.heroSheet, additionalInformation)
+            public Hero(int _x, int _y) : base(_x, _y, 1, "creature_hero", MapController.Instance.tilesSheet)
             {
                 destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
-                srcRect = new Rectangle(0, 0, 16, 16);
+                srcRect = new Rectangle(32, 32, 16, 16);
                 visualMovementSpeed = 10;
                 isDespawnable = true;
-                canWalkOn = WalkType.GroundOnly;
 
-				maxActionsCount = 20;
                 maxHealth = currentHealth = 100;
                 damageAmount = 25;
 
@@ -35,12 +30,8 @@ namespace Game.GameObjects
 
             public override void Render()
             {
-                if (isFacingRight)
-                    srcRect.X = 0;
-                else
-                    srcRect.X = 16;
                 destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
-                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y - 0.25f * Constants.TILE_SIZE);
+                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y);
                 GameController.Instance.Render(sprite, destRect, srcRect);
             }
 

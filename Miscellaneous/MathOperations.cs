@@ -34,12 +34,6 @@ namespace Game.Miscellaneous
 				return target;
 			return current + (target - current > 0 ? 1 : -1) * maxDelta;
 		}
-		public static byte MoveTowards(byte current, byte target, byte maxDelta)
-		{
-			if (Math.Abs(target - current) <= maxDelta)
-				return target;
-			return (byte)(current + (target - current > 0 ? 1 : -1) * maxDelta);
-		}
 		public static float MoveTowards(float current, float target, float maxDelta, out bool result)
 		{
 			if (Math.Abs(target - current) <= maxDelta)

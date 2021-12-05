@@ -66,24 +66,4 @@ namespace Game.Miscellaneous
             return "text";
         }
     }
-
-    public sealed class RectFrame : Frame
-    {
-        public Brush brush;
-        /// <summary>
-        /// Четырехугольник, определяющий координаты отрисовки. 
-        /// </summary>
-        public Rectangle destRect;
-
-        public RectFrame(Brush br, Rectangle dest)
-        {
-            brush = br;
-            destRect = dest;
-        }
-
-        public override string GetFrameType()
-        {
-            return "rect";
-        }
-    }
 }

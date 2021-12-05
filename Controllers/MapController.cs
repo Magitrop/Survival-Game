@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Game.GameObjects;
+
 using Game.Interfaces;
 using Game.Map;
 using Game.Miscellaneous;
@@ -32,7 +32,6 @@ namespace Game.Controllers
 			}
 		}
 
-		public Image heroSheet { get; private set; }
 		public Image itemsSheet { get; private set; }
 		public Image uiSheet { get; private set; }
 		public Image tilesSheet { get; private set; }
@@ -41,14 +40,13 @@ namespace Game.Controllers
 		public List<Chunk> visibleChunks;
 		public Camera camera;
 
-		public FastNoise noise { get; } = new FastNoise().SetNoiseType(FastNoise.NoiseType.SimplexFractal).SetFrequency(0.01f);
+		public FastNoise noise { get; } = new FastNoise().SetNoiseType(FastNoise.NoiseType.SimplexFractal).SetFrequency(0.02f);
 
 		/// <summary>
 		/// Вызывается при создании карты (в начале игры).
 		/// </summary>
 		public void Start()
 		{
-			heroSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\hero.png");
 			itemsSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\items.png");
 			uiSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\ui.png");
 			tilesSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\tiles_floor.png");
@@ -77,10 +75,7 @@ namespace Game.Controllers
 		/// </summary>
 		public void PostUpdate()
 		{
-			foreach (var chunk in visibleChunks)
-			{
-				chunk.RenderLighting();
-			}
+			
 		}
 
 		public void RecalculateChunks(int chunkPosX, int chunkPosY)
@@ -203,35 +198,23 @@ namespace Game.Controllers
 				SavedChunkInfo info;
 				int _x = coordX >= 0 ? (coordX % Constants.CHUNK_SIZE) : (Constants.CHUNK_SIZE + (coordX % Constants.CHUNK_SIZE)) % Constants.CHUNK_SIZE;
 				int _y = coordY >= 0 ? (coordY % Constants.CHUNK_SIZE) : (Constants.CHUNK_SIZE + (coordY % Constants.CHUNK_SIZE)) % Constants.CHUNK_SIZE;
-				if ((info = GameController.Instance.savedChunks.Find(c => c.changedTiles.Any(t => t.coords == (byte)((_y << 3) + _x)))) != null)
+				if ((info = GameController.Instance.savedChunks.Find(c => c.changedTiles.Any(t => t.Item1 == (byte)((_y << 3) + _x)))) != null)
 				{
-					var t = info.changedTiles.Find(c => c.coords == (byte)((_y << 3) + _x));
+					var t = info.changedTiles.Find(c => c.Item1 == (byte)((_y << 3) + _x));
 					// если на клетке есть объект
-					if (t.additionalInformation.Length > 0 && t.additionalInformation[0] > 0)
+					if (t.Item3 > 0)
 						return false;
 				}
 
 				float height = noise.GetNoise(coordX, coordY) + 0.5f;
-				if (height >= 0.42f && height < 0.55f)
-				{
-					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.15f)
-						return false;
-				}
-				else if (height >= 0.55f && height < 0.67f)
-                {
+				if (height >= 0.55f && height < 0.67f)
 					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.25f)
 						return false;
-				}
-				else if (height >= 0.67f && height < 0.8f)
-				{
-					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.2f)
-						return false;
-				}
 			}
 			return true;
         }
 
-		public List<(int, int)> FindPath((int x, int y) from, (int x, int y) to, WalkType canWalkOn, int maxDistance = 25)
+		public List<(int, int)> FindPath((int x, int y) from, (int x, int y) to, int maxDistance = 25)
         {
 			if (MathOperations.Distance(from, to) > maxDistance)
 				return null;
@@ -239,24 +222,23 @@ namespace Game.Controllers
 			List<(int, int)> path = new List<(int, int)>();
 
 			// сама клетка - количество шагов
-			var tiles = new Queue<(Tile tile, int stepsCount)>();
+			var tiles = new Queue<(Tile, int)>();
 			var checkedTiles = new Dictionary<string, (Tile, int)>();
 			tiles.Enqueue((GetTile(from.x, from.y), 0));
 			while (tiles.Count > 0)
 			{
 				var t = tiles.Dequeue();
-				if (!checkedTiles.ContainsKey(t.tile.globalX + ";" + t.tile.globalY) && 
-					(t.tile?.gameObject == null || 
-					t.tile?.gameObject == GetTile(to.x, to.y).gameObject ||
-					t.tile?.gameObject == GetTile(from.x, from.y).gameObject) && 
-					t.stepsCount <= maxDistance &&
-					GameObject.CanStepOn(canWalkOn, t.tile.tileType))
+				if (!checkedTiles.ContainsKey(t.Item1.globalX + ";" + t.Item1.globalY) && 
+					(t.Item1?.gameObject == null || 
+					t.Item1?.gameObject == GetTile(to.x, to.y).gameObject ||
+					t.Item1?.gameObject == GetTile(from.x, from.y).gameObject) && 
+					t.Item2 <= maxDistance)
 				{
-					checkedTiles.Add(t.tile.globalX + ";" + t.tile.globalY, (t.tile, t.stepsCount));
-					tiles.Enqueue((GetTile(t.tile.globalX - 1, t.tile.globalY), t.stepsCount + 1));
-					tiles.Enqueue((GetTile(t.tile.globalX + 1, t.tile.globalY), t.stepsCount + 1));
-					tiles.Enqueue((GetTile(t.tile.globalX, t.tile.globalY - 1), t.stepsCount + 1));
-					tiles.Enqueue((GetTile(t.tile.globalX, t.tile.globalY + 1), t.stepsCount + 1));
+					checkedTiles.Add(t.Item1.globalX + ";" + t.Item1.globalY, (t.Item1, t.Item2));
+					tiles.Enqueue((GetTile(t.Item1.globalX - 1, t.Item1.globalY), t.Item2 + 1));
+					tiles.Enqueue((GetTile(t.Item1.globalX + 1, t.Item1.globalY), t.Item2 + 1));
+					tiles.Enqueue((GetTile(t.Item1.globalX, t.Item1.globalY - 1), t.Item2 + 1));
+					tiles.Enqueue((GetTile(t.Item1.globalX, t.Item1.globalY + 1), t.Item2 + 1));
 				}
 			}
 

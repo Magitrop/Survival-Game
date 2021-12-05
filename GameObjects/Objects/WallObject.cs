@@ -13,10 +13,9 @@ namespace Game.GameObjects
 {
 	public abstract partial class GameObject
 	{
-		private sealed class WallObject : BreakableObject
+		public sealed class WallObject : GameObject
 		{
-			public WallObject(int _x, int _y, byte[] additionalInformation = null) : 
-				base(_x, _y, 101, "obj_wall", MapController.Instance.objectsSheet, additionalInformation)
+			public WallObject(int _x, int _y) : base(_x, _y, 101, "obj_wall", MapController.Instance.objectsSheet)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(16, 0, 16, 16);
@@ -25,7 +24,7 @@ namespace Game.GameObjects
 				Start();
 			}
 
-			protected override void OnSpawn()
+			public override void OnSpawn()
 			{
 				base.OnSpawn();
 				RecalculateAdjacent();

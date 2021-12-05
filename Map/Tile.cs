@@ -29,52 +29,22 @@ namespace Game.Map
 		public Chunk chunk;
 		public GameObject gameObject { get; private set; }
 		public int tileType;
-		/// <summary>
-		/// Уровень освещенности клетки.
-		/// </summary>
-		public byte lightingLevel;
 
 		private Rectangle destRect;
 
 		private static Rectangle[] srcRects = 
 			new Rectangle[]
 			{
-				// 0 - глубокое море
 				new Rectangle(12 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 1 - море
 				new Rectangle(13 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 2 - мелководье
 				new Rectangle(14 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 3 - пляж
 				new Rectangle(15 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 4 - луг
 				new Rectangle(16 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 5 - холм
 				new Rectangle(17 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 6 - гора
 				new Rectangle(18 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 7 - заснеженная гора
 				new Rectangle(19 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
-				// 8 - деревянный пол
-				new Rectangle(12 * Constants.TEXTURE_RESOLUTION, 3 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
+				new Rectangle(12 * Constants.TEXTURE_RESOLUTION, 3 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION)
 			};
-
-		public static int GetTileTypePathPrice(int tileType)
-        {
-			switch (tileType)
-            {
-				case 0:
-				case 1:
-				case 2: return 1;
-				case 3: return 3;
-				case 4: return 3;
-				case 5: return 4;
-				case 6: return 5;
-				case 7: return 7;
-				case 8: return 1;
-			}
-			return 1;
-        }
 
 		public Tile(int _x, int _y, Chunk _chunk)
 		{
@@ -99,25 +69,33 @@ namespace Game.Map
 				chunk.objects.Add(gameObject);*/
 		}
 
+		private float curTimer;
+		private int curAnimationFrame = 0;
+		private Rectangle[] srcAnimRects = 
+			new Rectangle[3]
+			{
+				new Rectangle(14 * Constants.TEXTURE_RESOLUTION, 2 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
+				new Rectangle(14 * Constants.TEXTURE_RESOLUTION, 3 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
+				new Rectangle(14 * Constants.TEXTURE_RESOLUTION, 4 * Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION, Constants.TEXTURE_RESOLUTION),
+			};
 		public void Render()
 		{
+			curTimer += Time.deltaTime;
+			if (curTimer > 0.5f)
+			{
+				curTimer = 0;
+				if (++curAnimationFrame > 2)
+					curAnimationFrame = 0;
+			}
+
 			destRect.X = (int)((chunk.x * Constants.CHUNK_SIZE + x) * Constants.TILE_SIZE + MapController.Instance.camera.x);
 			destRect.Y = (int)((chunk.y * Constants.CHUNK_SIZE + y) * Constants.TILE_SIZE + MapController.Instance.camera.y);
+			//if (tileType != 2)
+				GameController.Instance.Render(MapController.Instance.tilesSheet, destRect, srcRects[tileType]);
+			//else GameController.Instance.Render(MapController.Instance.tilesSheet, destRect, srcAnimRects[curAnimationFrame]);
 
-			GameController.Instance.Render(MapController.Instance.tilesSheet, destRect, srcRects[tileType]);
-		}
-
-		public void RenderLighting()
-		{
-			destRect.X = (int)((chunk.x * Constants.CHUNK_SIZE + x) * Constants.TILE_SIZE + MapController.Instance.camera.x);
-			destRect.Y = (int)((chunk.y * Constants.CHUNK_SIZE + y) * Constants.TILE_SIZE + MapController.Instance.camera.y);
-
-			GameController.Instance.Render(LightingController.Instance.lightingBrushes[255 - lightingLevel], destRect);
-		}
-
-		public void ResetLighting()
-		{
-			lightingLevel = LightingController.Instance.ambientLightingLevel;
+			if (gameObject != null)
+				gameObject.Render();
 		}
 	}
 }
