@@ -18,7 +18,8 @@ namespace Game.GameObjects
             public Hero(
                 int _x, 
                 int _y, 
-                byte[] additionalInformation = null) : base(_x, _y, 1, "creature_hero", MapController.Instance.heroSheet, additionalInformation)
+                byte[] additionalInformation = null) : 
+                base(_x, _y, 1, "creature_hero", MapController.Instance.creatureSheets["creature_hero"], additionalInformation)
             {
                 destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
                 srcRect = new Rectangle(0, 0, 16, 16);
@@ -28,7 +29,8 @@ namespace Game.GameObjects
 
 				maxActionsCount = 20;
                 maxHealth = currentHealth = 100;
-                damageAmount = 25;
+				isAlive = true;
+                damageAmount = 10;
 
                 Start();
             }
@@ -40,7 +42,7 @@ namespace Game.GameObjects
                 else
                     srcRect.X = 16;
                 destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
-                destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y - 0.25f * Constants.TILE_SIZE);
+                destRect.Y = (int)((visualY - 0.25f) * Constants.TILE_SIZE + MapController.Instance.camera.y);
                 GameController.Instance.Render(sprite, destRect, srcRect);
             }
 

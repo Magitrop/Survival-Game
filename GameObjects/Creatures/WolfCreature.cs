@@ -13,36 +13,47 @@ using System.Threading.Tasks;
 
 namespace Game.GameObjects
 {
-	public abstract partial class GameObject
-	{
-		private sealed class TestCreature : Creature
-		{
-			public Creature currentTarget;
-			private List<(int x, int y)> currentPath;
-			private int currentPathIndex;
-
-			public TestCreature(
-				int _x, 
-				int _y, 
-				byte[] additionalInformation = null) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet, additionalInformation)
+    public abstract partial class GameObject
+    {
+        private sealed class WolfCreature : Creature
+        {
+			public WolfCreature(
+				int _x,
+				int _y,
+				byte[] additionalInformation = null) : 
+				base(_x, _y, 2, "creature_wolf", MapController.Instance.creatureSheets["creature_wolf"], additionalInformation)
 			{
-				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
-				srcRect = new Rectangle(32, 32, 16, 16);
+				destRect = new Rectangle(0, 0, (int)(Constants.TILE_SIZE * 1.5f), (int)Constants.TILE_SIZE);
+				srcRect = new Rectangle(0, 0, 24, 16);
 				isDespawnable = true;
 				canWalkOn = WalkType.GroundOnly;
 
-				maxActionsCount = 10;
-				maxHealth = currentHealth = 100;
+				maxActionsCount = 15;
+				maxHealth = currentHealth = 70;
 				isAlive = true;
 				damageAmount = 10;
 
 				Start();
 			}
 
+			public Creature currentTarget;
+			private List<(int x, int y)> currentPath;
+			private int currentPathIndex;
+
 			public override void Render()
 			{
-				destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
-				destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y);
+				if (isFacingRight)
+					srcRect.X = 24;
+				else
+					srcRect.X = 0;
+
+				if (isAlive)
+					srcRect.Y = 0;
+				else
+					srcRect.Y = 16;
+
+				destRect.X = (int)((visualX - 0.25f) * Constants.TILE_SIZE + MapController.Instance.camera.x);
+				destRect.Y = (int)((visualY - 0.25f) * Constants.TILE_SIZE + MapController.Instance.camera.y);
 				GameController.Instance.Render(sprite, destRect, srcRect);
 			}
 
@@ -59,7 +70,7 @@ namespace Game.GameObjects
 			public override void OnTurnStart()
 			{
 				base.OnTurnStart();
-				currentTarget = GameController.Instance.mainHero as Creature;
+				currentTarget = GameController.Instance.mainHero;
 				currentPath = MapController.Instance.FindPath(coords, currentTarget.coords, canWalkOn);
 				currentPathIndex = 0;
 			}
@@ -70,16 +81,21 @@ namespace Game.GameObjects
 				{
 					if (MoveToVisual())
 					{
-						if (actionsLeft <= 0)
+						if (actionsLeft <= 0 || !isAlive)
 						{
 							GameController.Instance.NextTurn();
 							return;
 						}
 						if (currentPath != null && currentPath.Count > 0)
+                        {
 							if (MapController.Instance.GetTile(
-								currentPath[currentPathIndex].x, 
+								currentPath[currentPathIndex].x,
 								currentPath[currentPathIndex].y).gameObject != currentTarget)
 							{
+								if (currentPath[currentPathIndex].x > x)
+									isFacingRight = true;
+								else if (currentPath[currentPathIndex].x < x)
+									isFacingRight = false;
 								if (MoveTo(currentPath[currentPathIndex].x, currentPath[currentPathIndex].y))
 								{
 									if (isVisible)
@@ -91,8 +107,10 @@ namespace Game.GameObjects
 							else
 							{
 								DealDamage(currentTarget, this, damageAmount);
-                                actionsLeft = 0;
+								actionsLeft = 0;
 							}
+						}
+						else actionsLeft = 0;
 					}
 				}
 			}
@@ -102,5 +120,5 @@ namespace Game.GameObjects
 
 			}
 		}
-	}
+    }
 }

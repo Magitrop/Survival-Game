@@ -90,7 +90,10 @@ namespace Game.Controllers
 			healthCount.Width =
 				(int)(healthBarDest.Width
 				/ 100f
-				* Math.Min(GameController.Instance.mainHero.currentHealth * 100f / GameController.Instance.mainHero.maxHealth, 100));
+				* Math.Min(
+					GameController.Instance.mainHero.currentHealth 
+					* 100f 
+					/ GameController.Instance.mainHero.maxHealth, 100));
 			barTipDest.X = healthBarDest.X + healthBarDest.Width;
 			barTipDest.Y = healthBarDest.Y;
 			GameController.Instance.Render(
@@ -116,7 +119,10 @@ namespace Game.Controllers
 			staminaCount.Width =
 				(int)(staminaBarDest.Width 
 				/ 100f
-				* Math.Min(GameController.Instance.mainHero.actionsLeft * 100f / GameController.Instance.mainHero.maxActionsCount, 100));
+				* Math.Min(
+					GameController.Instance.mainHero.actionsLeft 
+					* 100f 
+					/ GameController.Instance.mainHero.maxActionsCount, 100));
 			GameController.Instance.Render(
 				MapController.Instance.uiSheet,
 				staminaBarDest,

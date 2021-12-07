@@ -292,8 +292,10 @@ namespace Game.Controllers
 								// атаковать
 								case 2:
 									// предполагается, что на клетке есть существо
-									Creature.DealDamage((Creature)selectedTile.gameObject, mainHero, mainHero.damageAmount);
-									Debug.WriteLine(((Creature)selectedTile.gameObject).currentHealth);
+									if (((Creature)selectedTile.gameObject).isAlive)
+										Creature.DealDamage((Creature)selectedTile.gameObject, mainHero, mainHero.damageAmount);
+									else
+
 									leftMouseButton = false;
 									break;
 								// разрушить
@@ -557,7 +559,7 @@ namespace Game.Controllers
 					t.SetGameObject(GameObject.Spawn("obj_wooden_fence_gate", mainHero.x, mainHero.y - 1));
 					MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
 				}*/
-				Spawn((TurnBasedObject)GameObject.Spawn("creature_test", mainHero.x, mainHero.y + 1));
+				Spawn((TurnBasedObject)GameObject.Spawn("creature_bear", mainHero.x, mainHero.y + 1));
 			}
 		}
 

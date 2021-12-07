@@ -160,7 +160,8 @@ namespace Game.GameObjects
 			switch (_objectID)
             {
 				case 1: return Spawn(new Hero(atX, atY, additionalInformation));
-				case 2: return Spawn(new TestCreature(atX, atY, additionalInformation));
+				case 2: return Spawn(new WolfCreature(atX, atY, additionalInformation));
+				case 3: return Spawn(new BearCreature(atX, atY, additionalInformation));
 				case 100: return Spawn(new PineTreeObject(atX, atY, additionalInformation));
 				case 101: return Spawn(new WoodenFenceObject(atX, atY, additionalInformation));
 				case 102: return Spawn(new WoodenFenceGateObject(atX, atY, additionalInformation));
@@ -177,7 +178,8 @@ namespace Game.GameObjects
 			switch (_objectName)
 			{
 				case "creature_hero": return Spawn(new Hero(atX, atY, additionalInformation));
-				case "creature_test": return Spawn(new TestCreature(atX, atY, additionalInformation));
+				case "creature_wolf": return Spawn(new WolfCreature(atX, atY, additionalInformation));
+				case "creature_bear": return Spawn(new BearCreature(atX, atY, additionalInformation));
 				case "obj_pine_tree": return Spawn(new PineTreeObject(atX, atY, additionalInformation));
 				case "obj_wooden_fence": return Spawn(new WoodenFenceObject(atX, atY, additionalInformation));
 				case "obj_wooden_fence_gate": return Spawn(new WoodenFenceGateObject(atX, atY, additionalInformation));
@@ -194,7 +196,8 @@ namespace Game.GameObjects
 			switch (_objectID)
 			{
 				case 1: return "creature_hero";
-				case 2: return "creature_test";
+				case 2: return "creature_wolf";
+				case 3: return "creature_bear";
 				case 100: return "obj_pine_tree";
 				case 101: return "obj_wooden_fence";
 				case 102: return "obj_wooden_fence_gate";
@@ -211,7 +214,8 @@ namespace Game.GameObjects
 			switch (_objectName)
 			{
 				case "creature_hero": return 1;
-				case "creature_test": return 2;
+				case "creature_wolf": return 2;
+				case "creature_bear": return 3;
 				case "obj_pine_tree": return 100;
 				case "obj_wooden_fence": return 101;
 				case "obj_wooden_fence_gate": return 102;

@@ -32,7 +32,7 @@ namespace Game.Controllers
 			}
 		}
 
-		public Image heroSheet { get; private set; }
+		public Dictionary<string, Image> creatureSheets { get; private set; }
 		public Image itemsSheet { get; private set; }
 		public Image uiSheet { get; private set; }
 		public Image tilesSheet { get; private set; }
@@ -48,7 +48,11 @@ namespace Game.Controllers
 		/// </summary>
 		public void Start()
 		{
-			heroSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\hero.png");
+			creatureSheets = new Dictionary<string, Image>();
+			creatureSheets["creature_hero"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\hero.png");
+			creatureSheets["creature_wolf"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\wolf.png");
+			creatureSheets["creature_bear"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\bear.png");
+
 			itemsSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\items.png");
 			uiSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\ui.png");
 			tilesSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\tiles_floor.png");
@@ -261,7 +265,8 @@ namespace Game.Controllers
 			}
 
 			(Tile, int)[] sideTiles = new (Tile, int)[4];
-			checkedTiles.TryGetValue(to.x + ";" + to.y, out (Tile, int) cur);
+			if (!checkedTiles.TryGetValue(to.x + ";" + to.y, out (Tile, int) cur))
+				return null;
 			while (cur.Item2 > 0)
 			{
 				path.Add((cur.Item1.globalX, cur.Item1.globalY));

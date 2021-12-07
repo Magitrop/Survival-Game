@@ -56,9 +56,11 @@
     <Compile Include="Controllers\MapController.cs" />
     <Compile Include="Controllers\UIOverlayController.cs" />
     <Compile Include="Fonts.cs" />
+    <Compile Include="GameObjects\Creatures\BearCreature.cs" />
     <Compile Include="GameObjects\Creatures\Creature.cs" />
     <Compile Include="GameObjects\Creatures\Hero.cs" />
     <Compile Include="GameObjects\Creatures\TestCreature.cs" />
+    <Compile Include="GameObjects\Creatures\WolfCreature.cs" />
     <Compile Include="GameObjects\GameObject.cs" />
     <Compile Include="GameObjects\BreakableObject.cs" />
     <Compile Include="GameObjects\LightingObject.cs" />
