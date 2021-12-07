@@ -14,7 +14,8 @@ namespace Game.Miscellaneous
 	{
 		Axe,
 		Spade,
-		Pickaxe
+		Pickaxe,
+		Hand
 	}
 
 	public abstract class Item
@@ -57,6 +58,8 @@ namespace Game.Miscellaneous
 				case 5: return ItemChest.Instance;
 				case 6: return ItemStoneAxe.Instance;
 				case 7: return ItemEmberPiece.Instance;
+				case 8: return ItemWoodenStick.Instance;
+				case 9: return ItemCobblestone.Instance;
 				default: return null;
 			};
 		}
@@ -71,6 +74,8 @@ namespace Game.Miscellaneous
 				case "item_chest": return ItemChest.Instance;
 				case "item_stone_axe": return ItemStoneAxe.Instance;
 				case "item_ember_piece": return ItemEmberPiece.Instance;
+				case "item_wooden_stick": return ItemWoodenStick.Instance;
+				case "item_cobblestone": return ItemCobblestone.Instance;
 				default: return null;
 			};
 		}
@@ -167,7 +172,7 @@ namespace Game.Miscellaneous
 						"obj_wooden_fence_gate", 
 						placeAt.globalX, 
 						placeAt.globalY, 
-						new byte[] { (byte)GameObject.GetObjectIDByName("obj_wooden_fence_gate"), 1, (byte)(sender?.x != placeAt.globalX ? 1 : 0) }));
+						new byte[] { (byte)GameObject.GetObjectIDByName("obj_wooden_fence_gate"), 3, (byte)(sender?.x != placeAt.globalX ? 1 : 0) }));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}
@@ -205,8 +210,7 @@ namespace Game.Miscellaneous
 					obj = GameObject.Spawn(
 						"obj_bonfire",
 						placeAt.globalX,
-						placeAt.globalY,
-						new byte[] { (byte)GameObject.GetObjectIDByName("obj_bonfire"), 1 }));
+						placeAt.globalY));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}
@@ -244,8 +248,7 @@ namespace Game.Miscellaneous
 					obj = GameObject.Spawn(
 						"obj_chest",
 						placeAt.globalX,
-						placeAt.globalY,
-						new byte[] { (byte)GameObject.GetObjectIDByName("obj_chest"), 1 }));
+						placeAt.globalY));
 				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
 				return true;
 			}
@@ -292,6 +295,50 @@ namespace Game.Miscellaneous
 				{
 					if (instance == null)
 						instance = new ItemEmberPiece();
+					return instance;
+				}
+			}
+		}
+		public sealed class ItemWoodenStick : Item
+		{
+			// singleton
+			private ItemWoodenStick()
+			{
+				itemID = 8;
+				itemName = "item_wooden_stick";
+				itemSrcRect = new Rectangle(7 * 16, 0, 16, 16);
+
+				maxStackQuantity = 100;
+			}
+			private static ItemWoodenStick instance;
+			public static ItemWoodenStick Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemWoodenStick();
+					return instance;
+				}
+			}
+		}
+		public sealed class ItemCobblestone : Item
+		{
+			// singleton
+			private ItemCobblestone()
+			{
+				itemID = 9;
+				itemName = "item_cobblestone";
+				itemSrcRect = new Rectangle(8 * 16, 0, 16, 16);
+
+				maxStackQuantity = 100;
+			}
+			private static ItemCobblestone instance;
+			public static ItemCobblestone Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemCobblestone();
 					return instance;
 				}
 			}

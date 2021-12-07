@@ -69,14 +69,12 @@ namespace Game
 
 		private void OnMouseDown(object sender, MouseEventArgs e)
 		{
-			if (e.Button == MouseButtons.Left)
-				GameController.Instance.OnMouseDown(sender, e);
+			GameController.Instance.OnMouseDown(sender, e);
 		}
 
 		private void OnMouseUp(object sender, MouseEventArgs e)
 		{
-			if (e.Button == MouseButtons.Left)
-				GameController.Instance.OnMouseUp(sender, e);
+			GameController.Instance.OnMouseUp(sender, e);
 		}
 
 		List<PointF> points = new List<PointF>();

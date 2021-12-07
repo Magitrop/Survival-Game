@@ -72,12 +72,21 @@ namespace Game.Controllers
 			}
 		}
 
-		private Rectangle itemDestRect;
-		private Rectangle slotDestRect;
-		private Rectangle slotSrcRect;
-		private Rectangle resultSlotSrcRect;
-		private Rectangle resultSelectedSlotSrcRect;
-		private Rectangle backgroundDestRect;
+		private Rectangle slotSrc;
+		private Rectangle backgroundSrc;
+		private Rectangle resultSlotSrc;
+		private Rectangle resultSelectedSlotSrc;
+		private Rectangle prevRecipeSrc;
+		private Rectangle nextRecipeSrc;
+		private Rectangle prevRecipeSelectedSrc;
+		private Rectangle nextRecipeSelectedSrc;
+
+		private Rectangle backgroundDest;
+		private Rectangle itemDest;
+		private Rectangle slotDest;
+		private Rectangle prevRecipeDest;
+		private Rectangle nextRecipeDest;
+
 		private Font itemsCountFont;
 		private Brush itemsCountBrush;
 
@@ -109,17 +118,46 @@ namespace Game.Controllers
 		{
 			Recipes.InitializeRecipes();
 
-			slotDestRect = new Rectangle();
-			slotDestRect.Width = InventoryController.Instance.slotSize;
-			slotDestRect.Height = InventoryController.Instance.slotSize;
+			slotDest = new Rectangle();
+			slotDest.Width = InventoryController.Instance.slotSize;
+			slotDest.Height = InventoryController.Instance.slotSize;
 
-			slotSrcRect = new Rectangle(0, 0, 32, 32);
-			resultSlotSrcRect = new Rectangle(32, 0, 32, 32);
-			resultSelectedSlotSrcRect = new Rectangle(64, 0, 32, 32);
+			slotSrc = new Rectangle(0, 0, 32, 32);
+			resultSlotSrc = new Rectangle(32, 0, 32, 32);
+			resultSelectedSlotSrc = new Rectangle(64, 0, 32, 32);
+			backgroundSrc = new Rectangle(0, 48, 256, 64);
+			prevRecipeSrc = new Rectangle(0, 112, 16, 16);
+			nextRecipeSrc = new Rectangle(16, 112, 16, 16);
+			prevRecipeSelectedSrc = new Rectangle(0, 128, 16, 16);
+			nextRecipeSelectedSrc = new Rectangle(16, 128, 16, 16);
 
-			itemDestRect = new Rectangle();
-			itemDestRect.Width = InventoryController.Instance.slotSize - 20;
-			itemDestRect.Height = InventoryController.Instance.slotSize - 20;
+			itemDest = new Rectangle();
+			itemDest.Width = InventoryController.Instance.slotSize - 20;
+			itemDest.Height = InventoryController.Instance.slotSize - 20;
+			backgroundDest = 
+				new Rectangle
+				(
+					(Constants.WINDOW_WIDTH - InventoryController.Instance.slotSize * 8 - 16) / 2,
+					(Constants.WINDOW_HEIGHT - InventoryController.Instance.slotSize * 4) / 2, 
+					8 * InventoryController.Instance.slotSize, 
+					2 * InventoryController.Instance.slotSize
+				);
+			prevRecipeDest =
+				new Rectangle
+				(
+					(Constants.WINDOW_WIDTH - InventoryController.Instance.slotSize * 8 - 16) / 2,
+					(Constants.WINDOW_HEIGHT - InventoryController.Instance.slotSize) / 2,
+					InventoryController.Instance.slotSize / 2,
+					InventoryController.Instance.slotSize / 2
+				);
+			nextRecipeDest =
+				new Rectangle
+				(
+					(Constants.WINDOW_WIDTH + InventoryController.Instance.slotSize * 7 - 16) / 2,
+					(Constants.WINDOW_HEIGHT - InventoryController.Instance.slotSize) / 2,
+					InventoryController.Instance.slotSize / 2,
+					InventoryController.Instance.slotSize / 2
+				);
 
 			itemsCountFont = new Font(Fonts.fonts.Families[0], 25.0F, FontStyle.Bold);
 			itemsCountBrush = new SolidBrush(Color.White);
@@ -131,54 +169,129 @@ namespace Game.Controllers
 			if (displayMode == CraftingDisplayMode.DoNotDisplay || currentRecipe == null)
 				return;
 
-			int x = (Constants.WINDOW_WIDTH - InventoryController.Instance.slotSize * 3 - 16) / 2;
-			int y = Constants.WINDOW_HEIGHT / 2 - InventoryController.Instance.slotSize;
+			GameController.Instance.Render(
+				MapController.Instance.uiSheet,
+				backgroundDest,
+				backgroundSrc);
+
+			if (currentRecipeIndex > 0)
+            {
+				if (MathOperations.IsPointInside(GameController.Instance.mousePosition, prevRecipeDest))
+				{
+					GameController.Instance.Render(
+					MapController.Instance.uiSheet,
+					prevRecipeDest,
+					prevRecipeSelectedSrc);
+
+					if (GameController.Instance.leftMouseButton)
+					{
+						currentRecipeIndex--;
+						GameController.Instance.leftMouseButton = false;
+					}
+				}
+				else
+					GameController.Instance.Render(
+					MapController.Instance.uiSheet,
+					prevRecipeDest,
+					prevRecipeSrc);
+			}
+
+			if (currentRecipeIndex < availableRecipes.Count - 1)
+			{
+				if (MathOperations.IsPointInside(GameController.Instance.mousePosition, nextRecipeDest))
+				{
+					GameController.Instance.Render(
+					MapController.Instance.uiSheet,
+					nextRecipeDest,
+					nextRecipeSelectedSrc);
+
+					if (GameController.Instance.leftMouseButton)
+					{
+						currentRecipeIndex++;
+						GameController.Instance.leftMouseButton = false;
+					}
+				}
+				else
+					GameController.Instance.Render(
+					MapController.Instance.uiSheet,
+					nextRecipeDest,
+					nextRecipeSrc);
+			}
+
+			int x = (Constants.WINDOW_WIDTH + InventoryController.Instance.slotSize - 16) / 2;
+			int y = Constants.WINDOW_HEIGHT / 2 - InventoryController.Instance.slotSize * 3 / 2;
 			for (int i = 0; i < currentRecipe.ingredients.Length; i++)
 			{
-				slotDestRect.X = x;
-				slotDestRect.Y = y;
+				slotDest.X = x;
+				slotDest.Y = y;
 				GameController.Instance.Render(
 					MapController.Instance.uiSheet, 
-					slotDestRect, 
-					slotSrcRect);
+					slotDest, 
+					slotSrc);
 
-				itemDestRect.X = x + 10;
-				itemDestRect.Y = y + 10;
+				itemDest.X = slotDest.X + 10;
+				itemDest.Y = y + 10;
 				GameController.Instance.Render(
 					MapController.Instance.itemsSheet, 
-					itemDestRect, 
+					itemDest, 
 					currentRecipe.ingredients[i].item.itemSrcRect);
+
+				GameController.Instance.Render(
+					currentRecipe.ingredients[i].count.ToString(),
+					new Point(
+						itemDest.X + (int)(55 - 10f * currentRecipe.ingredients[i].count.ToString().Length),
+						itemDest.Y + 35),
+					itemsCountFont,
+					itemsCountBrush);
 
 				x -= InventoryController.Instance.slotSize;
 			}
 
-			x = (Constants.WINDOW_WIDTH + InventoryController.Instance.slotSize - 16) / 2;
-			slotDestRect.X = x;
-			slotDestRect.Y = y;
-			if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDestRect))
+			x = (Constants.WINDOW_WIDTH + InventoryController.Instance.slotSize * 5 - 16) / 2;
+			slotDest.X = x;
+			slotDest.Y = y;
+
+			bool crafted = false;
+			if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDest))
 			{
 				GameController.Instance.Render(
 					MapController.Instance.uiSheet,
-					slotDestRect,
-					resultSelectedSlotSrcRect);
-				if (GameController.Instance.mouseIsDown)
+					slotDest,
+					resultSelectedSlotSrc);
+
+				if (GameController.Instance.leftMouseButton)
 				{
-					Craft(currentRecipe, displayMode == CraftingDisplayMode.WithCraftingTable);
-					GameController.Instance.mouseIsDown = false;
+					crafted = Craft(currentRecipe, displayMode == CraftingDisplayMode.WithCraftingTable);
+					GameController.Instance.leftMouseButton = false;
 				}
 			}
 			else
 				GameController.Instance.Render(
 					MapController.Instance.uiSheet,
-					slotDestRect,
-					resultSlotSrcRect);
+					slotDest,
+					resultSlotSrc);
 
-			itemDestRect.X = x + 10;
-			itemDestRect.Y = y + 10;
+			itemDest.X = x + 10;
+			itemDest.Y = y + 10;
 			GameController.Instance.Render(
 				MapController.Instance.itemsSheet,
-				itemDestRect,
+				itemDest,
 				currentRecipe.result.item.itemSrcRect);
+
+			GameController.Instance.Render(
+					currentRecipe.result.count.ToString(),
+					new Point(
+						itemDest.X + (int)(55 - 10f * currentRecipe.result.count.ToString().Length),
+						itemDest.Y + 35),
+					itemsCountFont,
+					itemsCountBrush);
+
+			if (crafted)
+            {
+				GetAvailableRecipes();
+				if (availableRecipes.Count == 0)
+					displayMode = CraftingDisplayMode.DoNotDisplay;
+			}
 		}
 	}
 
@@ -189,17 +302,64 @@ namespace Game.Controllers
 		{
 			allRecipes = new List<CraftingController.Recipe>();
 
+			// деревянная палка
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenLog.Instance, 1),
+					},
+					(Items.ItemWoodenStick.Instance, 3),
+					false)
+				);
+
 			// деревянный забор
 			allRecipes.Add(
 				new CraftingController.Recipe
 				(
 					new (Item, int)[]
 					{ 
-						(Items.ItemWoodenLog.Instance, 3),
-						(Items.ItemStoneAxe.Instance, 3),
-						(Items.ItemBonfire.Instance, 3),
+						(Items.ItemWoodenLog.Instance, 4),
 					}, 
 					(Items.ItemWoodenFence.Instance, 1),
+					false)
+				);
+
+			// деревянная калитка
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenLog.Instance, 5),
+					},
+					(Items.ItemWoodenFenceGate.Instance, 1),
+					false)
+				);
+
+			// сундук
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenLog.Instance, 20),
+					},
+					(Items.ItemChest.Instance, 1),
+					false)
+				);
+
+			// каменный топор
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenStick.Instance, 5),
+						(Items.ItemCobblestone.Instance, 5),
+					},
+					(Items.ItemStoneAxe.Instance, 1),
 					false)
 				);
 		}

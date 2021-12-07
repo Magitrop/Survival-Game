@@ -20,7 +20,7 @@ namespace Game.GameObjects
                 destRect = new Rectangle(0, 0, (int)(Constants.TILE_SIZE * 1.5f), (int)(Constants.TILE_SIZE * 2f));
                 srcRect = new Rectangle(103, 0, 24, 32);
                 isDespawnable = true;
-                maxDurability = 10;
+                maxDurability = 25;
                 shouldBeBrokenWith = ToolType.Axe;
                 if (additionalInformation != null && additionalInformation.Length > 1)
                     durability = additionalInformation[1];

@@ -1,5 +1,6 @@
 ﻿using Game.GameObjects;
 using Game.Interfaces;
+using Game.Map;
 using Game.Miscellaneous;
 using System;
 using System.Collections.Generic;
@@ -52,8 +53,12 @@ namespace Game.Controllers
 
 		public void GenerateLighting()
         {
-			foreach (var chunk in MapController.Instance.visibleChunks)
-				chunk.ResetLighting();
+			Task.Run(async () =>
+			{
+				for (int i = 0; i < MapController.Instance.visibleChunks.Count; i++)
+					await Task.Run(() => { MapController.Instance.visibleChunks[i].ResetLighting(); });
+			}).Wait();
+
 			for (int i = 0; i < lightingObjects.Count; i++)
 				if (GameController.Instance.mainHero != null && 
 					MathOperations.Distance(lightingObjects[i].coords, GameController.Instance.mainHero.coords) < 20)

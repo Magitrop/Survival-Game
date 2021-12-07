@@ -33,11 +33,11 @@ namespace Game.GameObjects
 				if (additionalInformation != null)
 					for (int i = 2; i < additionalInformation.Length; i += 4)
 						container.Add(
-							(
-								InventoryController.Instance.GetSlotByRowAndColumn((additionalInformation[i], additionalInformation[i + 1])), 
-								Items.GetItemByID(additionalInformation[i + 2]), 
-								additionalInformation[i + 3]
-							));
+						(
+							InventoryController.Instance.GetSlotByRowAndColumn((additionalInformation[i], additionalInformation[i + 1])), 
+							Items.GetItemByID(additionalInformation[i + 2]), 
+							additionalInformation[i + 3]
+						));
 
 				Start();
 			}
@@ -47,11 +47,13 @@ namespace Game.GameObjects
 				base.OnBreak(breaker, wasBrokenWith);
 				if (breaker as Hero != null)
 				{
+					foreach (var i in container)
+						InventoryController.Instance.ReceiveItems(i.item, i.count);
+
 					if (wasBrokenWith == shouldBeBrokenWith)
-						InventoryController.Instance.ReceiveItems(Items.ItemBonfire.Instance, 1);
+						InventoryController.Instance.ReceiveItems(Items.ItemChest.Instance, 1);
 					else
 						InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance, new Random().Next(1, 5));
-					InventoryController.Instance.ReceiveItems(Items.ItemEmberPiece.Instance, new Random().Next(0, 2));
 				}
 			}
 
@@ -64,6 +66,7 @@ namespace Game.GameObjects
 
 			public void CloseChest()
 			{
+				container.Clear();
 				InventoryController.Instance.SaveChest(this);
 				List<byte> info = new List<byte>()
 				{

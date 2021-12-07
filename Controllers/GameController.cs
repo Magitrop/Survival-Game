@@ -70,7 +70,8 @@ namespace Game.Controllers
 
 		public Point mousePosition;
 		public Point currentTileSelection = new Point();
-		public bool mouseIsDown;
+		public bool leftMouseButton;
+		public bool rightMouseButton;
 
 		private Font objectInfoFont;
 		private Brush objectInfoBrush;
@@ -87,6 +88,7 @@ namespace Game.Controllers
 			MapController.Instance.Start();
 			InventoryController.Instance.Start();
 			CraftingController.Instance.Start();
+			UIOverlayController.Instance.Start();
 			LightingController.Instance.NextDayPart();
 
 			if (!LoadGame("save"))
@@ -124,6 +126,7 @@ namespace Game.Controllers
 			pause = duration;
 		}
 
+		private List<byte> actionsWithTile = new List<byte>();
 		/// <summary>
 		/// Вызывает в игровых объектах все методы, которые должны выполняться каждый кадр.
 		/// </summary>
@@ -141,14 +144,15 @@ namespace Game.Controllers
 			MapController.Instance.PreUpdate();
 			InventoryController.Instance.PreUpdate();
 
-			byte actionWithTile = 0;
+			actionsWithTile.Clear();
 			Rectangle rect = Rectangle.Empty, src;
 			if (!MainWindow.DrawWindowClosingAnimation &&
 				!(!MapController.Instance.camera.cameraFinishedMovement ||
 				currentObject != mainHero ||
 				!mainHero.isMoving) &&
 				InventoryController.Instance.selectedSlot == null &&
-				!InventoryController.Instance.isDraggingItem)
+				!InventoryController.Instance.isDraggingItem &&
+				InventoryController.Instance.displayMode ==InventoryController.InventoryDisplayMode.HotbarOnly)
 			{
 				double _x = (mousePosition.X - MapController.Instance.camera.x) / Constants.TILE_SIZE;
 				if (_x < 0)
@@ -161,14 +165,8 @@ namespace Game.Controllers
 
 				rect = new Rectangle
 				(
-					(int)(currentTileSelection.X * Constants.TILE_SIZE + MapController.Instance.camera.x)
-						/*(int)(Math.Truncate((mousePosition.X - Constants.TEXTURE_RESOLUTION / 2) / Constants.TILE_SIZE +
-						(MapController.Instance.camera.x < 0 ? 1f : 0)) * Constants.TILE_SIZE +
-							MapController.Instance.camera.x % Constants.TILE_SIZE)*/,
-					(int)(currentTileSelection.Y * Constants.TILE_SIZE + MapController.Instance.camera.y)
-						/*(int)(Math.Truncate((mousePosition.Y - Constants.TEXTURE_RESOLUTION / 2) / Constants.TILE_SIZE +
-						(MapController.Instance.camera.y < 0 ? 1f : 0)) * Constants.TILE_SIZE +
-							MapController.Instance.camera.y % Constants.TILE_SIZE)*/,
+					(int)(currentTileSelection.X * Constants.TILE_SIZE + MapController.Instance.camera.x),
+					(int)(currentTileSelection.Y * Constants.TILE_SIZE + MapController.Instance.camera.y),
 					(int)Constants.TILE_SIZE,
 					(int)Constants.TILE_SIZE
 				);
@@ -190,24 +188,24 @@ namespace Game.Controllers
 				{
 					Render(MapController.Instance.tilesSheet, rect, src);
 					// на клетке стоит нет объекта (можно строить)
-					actionWithTile = 4;
+					actionsWithTile.Add(4);
 				}
 				else if (selectedTile.gameObject != null)
 				{
 					Render(MapController.Instance.tilesSheet, rect, src);
 					if ((selectedTile.gameObject as BreakableObject) != null &&
-						(InventoryController.Instance.currentSlot.currentItem as ItemTool) != null)
+						(InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable) == null)
 						// на клетке стоит объект (разрушить)
-						actionWithTile = 3;
-					else if (selectedTile.gameObject.objectName == "obj_wooden_fence_gate")
+						actionsWithTile.Add(3);
+					if (selectedTile.gameObject.objectName == "obj_wooden_fence_gate")
 						// на клетке стоит дверь (войти/выйти)
-						actionWithTile = 1;
-					else if (selectedTile.gameObject.objectName == "obj_chest")
+						actionsWithTile.Add(1);
+					if (selectedTile.gameObject.objectName == "obj_chest")
 						// на клетке стоит сундук (открыть)
-						actionWithTile = 5;
-					else if ((selectedTile.gameObject as Creature) != null && selectedTile.gameObject != mainHero)
+						actionsWithTile.Add(5);
+					if ((selectedTile.gameObject as Creature) != null && selectedTile.gameObject != mainHero)
 						// на клетке стоит существо (атака)
-						actionWithTile = 2;
+						actionsWithTile.Add(2);
 				}
 			}
 
@@ -234,7 +232,7 @@ namespace Game.Controllers
 				}
 			else pause -= Time.deltaTime;
 
-			if (actionWithTile > 0)
+			if (actionsWithTile.Count > 0)
             {
 				rect = new Rectangle
 				(
@@ -259,108 +257,119 @@ namespace Game.Controllers
 
 			MapController.Instance.PostUpdate();
 
-			if (actionWithTile > 0 && InventoryController.Instance.displayMode == InventoryController.InventoryDisplayMode.HotbarOnly)
+			if (actionsWithTile.Count > 0 && InventoryController.Instance.displayMode == InventoryController.InventoryDisplayMode.HotbarOnly)
 			{
 				BreakableObject obj;
 				if ((obj = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y).gameObject as BreakableObject) != null &&
-					(InventoryController.Instance.currentSlot.currentItem as ItemTool) != null)
+					(InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable) == null)
 					Render($"{obj.durability}/{obj.maxDurability}", rect.Location, objectInfoFont, objectInfoBrush);
 
-				rect = new Rectangle
-				(
-					(int)((currentTileSelection.X + 1) * Constants.TILE_SIZE + MapController.Instance.camera.x),
-					(int)(currentTileSelection.Y * Constants.TILE_SIZE + MapController.Instance.camera.y),
-					(int)(Constants.TILE_SIZE * 0.5f),
-					(int)(Constants.TILE_SIZE * 0.5f)
-				);
-				src = new Rectangle
-				(
-					(actionWithTile - 1) * Constants.TEXTURE_RESOLUTION,
-					2 * Constants.TEXTURE_RESOLUTION,
-					Constants.TEXTURE_RESOLUTION,
-					Constants.TEXTURE_RESOLUTION
-				);
-				Render(MapController.Instance.uiSheet, rect, src);
-
-				if (MathOperations.Distance((currentTileSelection.X, currentTileSelection.Y), mainHero.coords) < 2)
+				for (int i = 0; i < actionsWithTile.Count; i++)
 				{
-					if (mouseIsDown)
-					{
-						Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
-						switch (actionWithTile)
-						{
-							// войти в дверь
-							case 1:
-								// предполагается, что на клетке есть дверь
-								
-								break;
-							// атаковать
-							case 2:
-								// предполагается, что на клетке есть существо
-								Creature.DealDamage((Creature)selectedTile.gameObject, mainHero, mainHero.damageAmount);
-								Debug.WriteLine(((Creature)selectedTile.gameObject).currentHealth);
-								mouseIsDown = false;
-								break;
-							// разрушить
-							case 3:
-								// предполагается, что на клетке есть разрушаемый объект, а в текущем слоте лежит инструмент
-								ItemTool tool = InventoryController.Instance.currentSlot.currentItem as ItemTool;
-								if (obj.shouldBeBrokenWith == tool.toolType)
-                                {
-									if (mainHero.actionsLeft < 1)
-										break;
-									mainHero.actionsLeft -= 1;
-                                }
-								else
-                                {
-									if (mainHero.actionsLeft < 2)
-										break;
-									mainHero.actionsLeft -= 2;
-								}
+					rect = new Rectangle
+					(
+						(int)((currentTileSelection.X + 1) * Constants.TILE_SIZE + MapController.Instance.camera.x),
+						(int)((currentTileSelection.Y + i * 0.5f) * Constants.TILE_SIZE + MapController.Instance.camera.y),
+						(int)(Constants.TILE_SIZE * 0.5f),
+						(int)(Constants.TILE_SIZE * 0.5f)
+					);
+					src = new Rectangle
+					(
+						(actionsWithTile[i] - 1) * Constants.TEXTURE_RESOLUTION,
+						2 * Constants.TEXTURE_RESOLUTION,
+						Constants.TEXTURE_RESOLUTION,
+						Constants.TEXTURE_RESOLUTION
+					);
+					Render(MapController.Instance.uiSheet, rect, src);
 
-								if (obj.Break(mainHero, tool.efficiency, tool.toolType) == true)
-								{
-									int index;
-									if ((index = LightingController.Instance.lightingObjects.FindIndex(g => g.coords == obj.coords)) >= 0)
-										LightingController.Instance.lightingObjects.RemoveAt(index);
-									selectedTile.SetGameObject(null);
-									LightingController.Instance.GenerateLighting();
-								}
-								else
-								{
-									var l = obj.objectAdditionalInformation.ToList();
-									if (l.Count < 2)
-										l.Add(obj.durability);
-									else l[1] = obj.durability;
-									obj.objectAdditionalInformation = l.ToArray();
-								}
-								selectedTile.chunk.UpdateTile(selectedTile.x, selectedTile.y);
-								mouseIsDown = false;
-								break;
-							// строить
-							case 4:
-								// предполагается, что слот не пуст и предмет является размещаемым
-								if (selectedTile.gameObject == null)
-									if ((InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable).OnItemPlacing(selectedTile, mainHero))
-										InventoryController.Instance.WithdrawItemsFromSlot(
-											InventoryController.Instance.currentSlot,
-											InventoryController.Instance.currentSlot.currentItem, 1);
-								if (InventoryController.Instance.currentSlot.currentItem == null)
-									mouseIsDown = false;
-								break;
-							// открыть сундук
-							case 5:
-								// предполагается, что на клетке стоит сундук
-								InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.Whole;
-								currentChest?.CloseChest();
-								(selectedTile.gameObject as GameObject.ChestObject)?.OpenChest();
-								mouseIsDown = false;
-								break;
+					if (MathOperations.Distance((currentTileSelection.X, currentTileSelection.Y), mainHero.coords) < 2)
+					{
+						if (leftMouseButton)
+						{
+							Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
+							switch (actionsWithTile[i])
+							{
+								// атаковать
+								case 2:
+									// предполагается, что на клетке есть существо
+									Creature.DealDamage((Creature)selectedTile.gameObject, mainHero, mainHero.damageAmount);
+									Debug.WriteLine(((Creature)selectedTile.gameObject).currentHealth);
+									leftMouseButton = false;
+									break;
+								// разрушить
+								case 3:
+									// предполагается, что на клетке есть разрушаемый объект
+									ItemTool tool = InventoryController.Instance.currentSlot.currentItem as ItemTool;
+									if (obj.shouldBeBrokenWith == (tool?.toolType ?? ToolType.Hand))
+									{
+										if (mainHero.actionsLeft < 1)
+											break;
+										mainHero.actionsLeft -= 1;
+									}
+									else
+									{
+										if (mainHero.actionsLeft < 3)
+											break;
+										mainHero.actionsLeft -= 3;
+									}
+
+									if (obj.Break(mainHero, tool?.efficiency ?? 1, tool?.toolType ?? ToolType.Hand) == true)
+									{
+										int index;
+										if ((index = LightingController.Instance.lightingObjects.FindIndex(g => g.coords == obj.coords)) >= 0)
+											LightingController.Instance.lightingObjects.RemoveAt(index);
+										selectedTile.SetGameObject(null);
+										LightingController.Instance.GenerateLighting();
+									}
+									else
+									{
+										var l = obj.objectAdditionalInformation.ToList();
+										if (l.Count < 2)
+											l.Add(obj.durability);
+										else l[1] = obj.durability;
+										obj.objectAdditionalInformation = l.ToArray();
+									}
+									selectedTile.chunk.UpdateTile(selectedTile.x, selectedTile.y);
+									leftMouseButton = false;
+									break;
+								// строить
+								case 4:
+									// предполагается, что слот не пуст и предмет является размещаемым
+									if (selectedTile.gameObject == null)
+										if ((InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable).OnItemPlacing(selectedTile, mainHero))
+											InventoryController.Instance.WithdrawItemsFromSlot(
+												InventoryController.Instance.currentSlot,
+												InventoryController.Instance.currentSlot.currentItem, 1);
+									if (InventoryController.Instance.currentSlot.currentItem == null)
+										leftMouseButton = false;
+									break;
+							}
+						}
+						else if (rightMouseButton)
+						{
+							Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
+							switch (actionsWithTile[i])
+							{
+								// войти в дверь
+								case 1:
+									// предполагается, что на клетке есть дверь
+
+									break;
+								// открыть сундук
+								case 5:
+									// предполагается, что на клетке стоит сундук
+									InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.Whole;
+									currentChest?.CloseChest();
+									(selectedTile.gameObject as GameObject.ChestObject)?.OpenChest();
+									rightMouseButton = false;
+									break;
+							}
 						}
 					}
 				}
 			}
 
+			UIOverlayController.Instance.PostUpdate();
 			InventoryController.Instance.PostUpdate();
 			CraftingController.Instance.PostUpdate();
 		}
@@ -491,7 +500,8 @@ namespace Game.Controllers
 
 			if (e.KeyCode == Keys.T)
 			{
-				InventoryController.Instance.ReceiveItems(Items.ItemStoneAxe.Instance);
+				InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance);
+				InventoryController.Instance.ReceiveItems(Items.ItemCobblestone.Instance);
 			}
 
 			if (!MapController.Instance.camera.cameraFinishedMovement || 
@@ -568,12 +578,18 @@ namespace Game.Controllers
 
 		public void OnMouseDown(object sender, MouseEventArgs e)
 		{
-			mouseIsDown = true;
+			if (e.Button == MouseButtons.Left)
+				leftMouseButton = true;
+			else if (e.Button == MouseButtons.Right)
+				rightMouseButton = true;
 		}
 
 		public void OnMouseUp(object sender, MouseEventArgs e)
 		{
-			mouseIsDown = false;
+			if (e.Button == MouseButtons.Left)
+				leftMouseButton = false;
+			else if (e.Button == MouseButtons.Right)
+				rightMouseButton = false;
 		}
 
 		/// <summary>
