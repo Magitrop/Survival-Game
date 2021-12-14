@@ -31,7 +31,7 @@ namespace Game.GameObjects
 		public bool isDespawnable;
 		public WalkType canWalkOn;
 
-		public bool isMoving
+		public bool finishedMoving
         {
 			get
             {
@@ -75,6 +75,7 @@ namespace Game.GameObjects
 		protected virtual void OnDespawn() { }
 		public abstract void Update();
 		public abstract void Render();
+		public virtual void PostRender() { }
 		public bool CanStepOn(int tileType)
         {
 			switch (canWalkOn)
@@ -168,6 +169,8 @@ namespace Game.GameObjects
 				case 103: return Spawn(new BonfireObject(atX, atY, additionalInformation));
 				case 104: return Spawn(new ChestObject(atX, atY, additionalInformation));
 				case 105: return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
+				case 106: return Spawn(new StoneLumpObject(atX, atY, additionalInformation));
+				case 107: return Spawn(new SmallStoneLumpObject(atX, atY, additionalInformation));
 				default:
 					return null;
             }
@@ -186,6 +189,8 @@ namespace Game.GameObjects
 				case "obj_bonfire": return Spawn(new BonfireObject(atX, atY, additionalInformation));
 				case "obj_chest": return Spawn(new ChestObject(atX, atY, additionalInformation));
 				case "obj_palm_tree": return Spawn(new PalmTreeObject(atX, atY, additionalInformation));
+				case "obj_stone_lump": return Spawn(new StoneLumpObject(atX, atY, additionalInformation));
+				case "obj_small_stone_lump": return Spawn(new SmallStoneLumpObject(atX, atY, additionalInformation));
 				default:
 					return null;
 			}

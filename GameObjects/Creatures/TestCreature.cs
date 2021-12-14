@@ -24,7 +24,7 @@ namespace Game.GameObjects
 			public TestCreature(
 				int _x, 
 				int _y, 
-				byte[] additionalInformation = null) : base(_x, _y, 2, "creature_test", MapController.Instance.tilesSheet, additionalInformation)
+				byte[] additionalInformation = null) : base(_x, _y, 2, "creature_test", Constants.tilesSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(32, 32, 16, 16);
@@ -44,6 +44,7 @@ namespace Game.GameObjects
 				destRect.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
 				destRect.Y = (int)(visualY * Constants.TILE_SIZE + MapController.Instance.camera.y);
 				GameController.Instance.Render(sprite, destRect, srcRect);
+				DrawHealthbar();
 			}
 
 			public override void Start()
@@ -98,6 +99,16 @@ namespace Game.GameObjects
 			}
 
 			public override void PostUpdate()
+			{
+
+			}
+
+			public override void PostRender()
+			{
+
+			}
+
+			protected override void DrawHealthbar()
 			{
 
 			}

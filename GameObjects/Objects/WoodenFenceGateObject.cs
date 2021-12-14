@@ -13,12 +13,12 @@ namespace Game.GameObjects
 {
 	public abstract partial class GameObject
 	{
-		private sealed class WoodenFenceGateObject : BreakableObject
+		public sealed class WoodenFenceGateObject : BreakableObject
 		{
 			public WoodenFenceGateObject(
 				int _x, 
 				int _y, 
-				byte[] additionalInformation = null) : base(_x, _y, 102, "obj_wooden_fence_gate", MapController.Instance.objectsSheet, additionalInformation)
+				byte[] additionalInformation = null) : base(_x, _y, 102, "obj_wooden_fence_gate", Constants.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				isDespawnable = true;
@@ -37,6 +37,9 @@ namespace Game.GameObjects
 
 				Start();
 			}
+
+			public Point insideHouse;
+			public Point outsideHouse;
 
 			protected override void OnBreak(GameObject breaker, ToolType wasBrokenWith)
 			{
@@ -237,9 +240,17 @@ namespace Game.GameObjects
 						_perimeter.Add(MapController.Instance.GetTile(x, y));
 
 						if (CheckTileInsideRoom(new Point(x + 1, y), false, _perimeter, _min, _max))
+                        {
 							FloodFill(new Point(x + 1, y), _perimeter, _min, _max);
+							insideHouse = new Point(x + 1, y);
+							outsideHouse = new Point(x - 1, y);
+						}
 						else //if (CheckTileInsideRoom(new Point(x - 1, y), false, _perimeter, _min, _max))
+                        {
 							FloodFill(new Point(x - 1, y), _perimeter, _min, _max);
+							insideHouse = new Point(x - 1, y);
+							outsideHouse = new Point(x + 1, y);
+						}
 						Tile t = MapController.Instance.GetTile(x, y);
 						t.tileType = fillTileType;
 						MapController.Instance.GetChunk(t.globalX, t.globalY).UpdateTile(t.x, t.y);
@@ -299,9 +310,17 @@ namespace Game.GameObjects
 						_perimeter.Add(MapController.Instance.GetTile(x, y));
 
 						if (CheckTileInsideRoom(new Point(x, y + 1), true, _perimeter, _min, _max))
+                        {
 							FloodFill(new Point(x, y + 1), _perimeter, _min, _max);
+							insideHouse = new Point(x, y + 1);
+							outsideHouse = new Point(x, y - 1);
+						}
 						else //if (CheckTileInsideRoom(new Point(x, y - 1), true, _perimeter, _min, _max))
+                        {
 							FloodFill(new Point(x, y - 1), _perimeter, _min, _max);
+							insideHouse = new Point(x, y - 1);
+							outsideHouse = new Point(x, y + 1);
+						}
 						Tile t = MapController.Instance.GetTile(x, y);
 						t.tileType = fillTileType;
 						MapController.Instance.GetChunk(t.globalX, t.globalY).UpdateTile(t.x, t.y);

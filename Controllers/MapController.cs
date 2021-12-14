@@ -32,33 +32,16 @@ namespace Game.Controllers
 			}
 		}
 
-		public Dictionary<string, Image> creatureSheets { get; private set; }
-		public Image itemsSheet { get; private set; }
-		public Image uiSheet { get; private set; }
-		public Image tilesSheet { get; private set; }
-		public Image floorsSheet { get; private set; }
-		public Image objectsSheet { get; private set; }
 		public List<Chunk> visibleChunks;
 		public Camera camera;
 
-		public FastNoise noise { get; } = new FastNoise().SetNoiseType(FastNoise.NoiseType.SimplexFractal).SetFrequency(0.01f);
+		public FastNoise noise { get; } = new FastNoise().SetNoiseType(FastNoise.NoiseType.SimplexFractal).SetFrequency(0.005f);
 
 		/// <summary>
 		/// Вызывается при создании карты (в начале игры).
 		/// </summary>
 		public void Start()
 		{
-			creatureSheets = new Dictionary<string, Image>();
-			creatureSheets["creature_hero"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\hero.png");
-			creatureSheets["creature_wolf"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\wolf.png");
-			creatureSheets["creature_bear"] = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\bear.png");
-
-			itemsSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\items.png");
-			uiSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\ui.png");
-			tilesSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\tiles_floor.png");
-			floorsSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\tiles.png");
-			objectsSheet = new Bitmap(new DirectoryInfo(Directory.GetCurrentDirectory()).Parent.Parent.FullName + "\\Sprites\\objects.png");
-
 			visibleChunks = new List<Chunk>();
 			/*for (int x = -Constants.RENDER_DISTANCE; x <= Constants.RENDER_DISTANCE; x++)
 				for (int y = -Constants.RENDER_DISTANCE; y <= Constants.RENDER_DISTANCE; y++)
@@ -114,8 +97,13 @@ namespace Game.Controllers
 						Chunk chunk = new Chunk(x, y);
 						visibleChunks.Insert(index < 0 ? 0 : index, chunk);
 						chunk.Initialize();
+						LightingController.Instance.GenerateLighting();
 					}
 				}
+
+			for (int x = chunkPosX - Constants.RENDER_DISTANCE; x <= chunkPosX + Constants.RENDER_DISTANCE; x++)
+				for (int y = chunkPosY - Constants.RENDER_DISTANCE; y <= chunkPosY + Constants.RENDER_DISTANCE; y++)
+					visibleChunks.Find(c => c.x == x && c.y == y).SpawnCreatures();
 		}
 
 		public void Update() { }
@@ -159,6 +147,19 @@ namespace Game.Controllers
 				result.Initialize();
 			}
 			return result;
+		}
+		
+		public bool IsInChunk(int coordX, int coordY, int chunkX, int chunkY)
+        {
+			if (coordX >= 0)
+				coordX /= Constants.CHUNK_SIZE;
+			else coordX = (coordX + 1) / Constants.CHUNK_SIZE - 1;
+
+			if (coordY >= 0)
+				coordY /= Constants.CHUNK_SIZE;
+			else coordY = (coordY + 1) / Constants.CHUNK_SIZE - 1;
+
+			return coordX == chunkX && coordY == chunkY;
 		}
 
 		public Tile GetTile(int coordX, int coordY, bool createNewChunkIfNotFound = true)
@@ -215,22 +216,39 @@ namespace Game.Controllers
 						return false;
 				}
 
-				float height = noise.GetNoise(coordX, coordY) + 0.5f;
+				/*float height = noise.GetNoise(coordX, coordY) + 0.5f;
+				Random r = new Random((coordX, coordY).GetHashCode());
 				if (height >= 0.42f && height < 0.55f)
 				{
-					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.15f)
+					if (r.Next(100) < 3f)
 						return false;
 				}
 				else if (height >= 0.55f && height < 0.67f)
                 {
-					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.25f)
+					if (r.Next(100) < 1f)
+						return false;
+					else
+					if (r.Next(100) < 7f)
 						return false;
 				}
 				else if (height >= 0.67f && height < 0.8f)
 				{
-					if (noise.GetNoise(coordX * 10, coordY * 10) + 0.5f < 0.2f)
+					if (r.Next(100) < 1f)
+						return false;
+					else if (r.Next(100) < 4f)
+						return false;
+					else if (r.Next(100) < 25f)
 						return false;
 				}
+				else if (height >= 0.8f && height < 0.94f)
+				{
+					if (r.Next(100) < 2f)
+						return false;
+					else if (r.Next(100) < 8f)
+						return false;
+					else if (r.Next(100) < 16f)
+						return false;
+				}*/
 			}
 			return true;
         }

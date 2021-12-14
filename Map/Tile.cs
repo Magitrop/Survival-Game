@@ -104,7 +104,7 @@ namespace Game.Map
 			destRect.X = (int)((chunk.x * Constants.CHUNK_SIZE + x) * Constants.TILE_SIZE + MapController.Instance.camera.x);
 			destRect.Y = (int)((chunk.y * Constants.CHUNK_SIZE + y) * Constants.TILE_SIZE + MapController.Instance.camera.y);
 
-			GameController.Instance.Render(MapController.Instance.tilesSheet, destRect, srcRects[tileType]);
+			GameController.Instance.Render(Constants.tilesSheet, destRect, srcRects[tileType]);
 		}
 
 		public void RenderLighting()

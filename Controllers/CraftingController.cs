@@ -170,50 +170,50 @@ namespace Game.Controllers
 				return;
 
 			GameController.Instance.Render(
-				MapController.Instance.uiSheet,
+				Constants.uiSheet,
 				backgroundDest,
 				backgroundSrc);
 
 			if (currentRecipeIndex > 0)
             {
-				if (MathOperations.IsPointInside(GameController.Instance.mousePosition, prevRecipeDest))
+				if (MathOperations.IsPointInside(MainWindow.mousePosition, prevRecipeDest))
 				{
 					GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					prevRecipeDest,
 					prevRecipeSelectedSrc);
 
-					if (GameController.Instance.leftMouseButton)
+					if (MainWindow.leftMouseButton)
 					{
 						currentRecipeIndex--;
-						GameController.Instance.leftMouseButton = false;
+						MainWindow.leftMouseButton = false;
 					}
 				}
 				else
 					GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					prevRecipeDest,
 					prevRecipeSrc);
 			}
 
 			if (currentRecipeIndex < availableRecipes.Count - 1)
 			{
-				if (MathOperations.IsPointInside(GameController.Instance.mousePosition, nextRecipeDest))
+				if (MathOperations.IsPointInside(MainWindow.mousePosition, nextRecipeDest))
 				{
 					GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					nextRecipeDest,
 					nextRecipeSelectedSrc);
 
-					if (GameController.Instance.leftMouseButton)
+					if (MainWindow.leftMouseButton)
 					{
 						currentRecipeIndex++;
-						GameController.Instance.leftMouseButton = false;
+						MainWindow.leftMouseButton = false;
 					}
 				}
 				else
 					GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					nextRecipeDest,
 					nextRecipeSrc);
 			}
@@ -225,14 +225,14 @@ namespace Game.Controllers
 				slotDest.X = x;
 				slotDest.Y = y;
 				GameController.Instance.Render(
-					MapController.Instance.uiSheet, 
+					Constants.uiSheet, 
 					slotDest, 
 					slotSrc);
 
 				itemDest.X = slotDest.X + 10;
 				itemDest.Y = y + 10;
 				GameController.Instance.Render(
-					MapController.Instance.itemsSheet, 
+					Constants.itemsSheet, 
 					itemDest, 
 					currentRecipe.ingredients[i].item.itemSrcRect);
 
@@ -252,29 +252,29 @@ namespace Game.Controllers
 			slotDest.Y = y;
 
 			bool crafted = false;
-			if (MathOperations.IsPointInside(GameController.Instance.mousePosition, slotDest))
+			if (MathOperations.IsPointInside(MainWindow.mousePosition, slotDest))
 			{
 				GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					slotDest,
 					resultSelectedSlotSrc);
 
-				if (GameController.Instance.leftMouseButton)
+				if (MainWindow.leftMouseButton)
 				{
 					crafted = Craft(currentRecipe, displayMode == CraftingDisplayMode.WithCraftingTable);
-					GameController.Instance.leftMouseButton = false;
+					MainWindow.leftMouseButton = false;
 				}
 			}
 			else
 				GameController.Instance.Render(
-					MapController.Instance.uiSheet,
+					Constants.uiSheet,
 					slotDest,
 					resultSlotSrc);
 
 			itemDest.X = x + 10;
 			itemDest.Y = y + 10;
 			GameController.Instance.Render(
-				MapController.Instance.itemsSheet,
+				Constants.itemsSheet,
 				itemDest,
 				currentRecipe.result.item.itemSrcRect);
 
@@ -311,6 +311,18 @@ namespace Game.Controllers
 						(Items.ItemWoodenLog.Instance, 1),
 					},
 					(Items.ItemWoodenStick.Instance, 3),
+					false)
+				);
+
+			// доски
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenLog.Instance, 3),
+					},
+					(Items.ItemWoodenPlanks.Instance, 1),
 					false)
 				);
 
@@ -356,10 +368,50 @@ namespace Game.Controllers
 				(
 					new (Item, int)[]
 					{
-						(Items.ItemWoodenStick.Instance, 5),
-						(Items.ItemCobblestone.Instance, 5),
+						(Items.ItemWoodenStick.Instance, 7),
+						(Items.ItemCobblestone.Instance, 8),
 					},
 					(Items.ItemStoneAxe.Instance, 1),
+					false)
+				);
+
+			// каменное копье
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenStick.Instance, 8),
+						(Items.ItemCobblestone.Instance, 10),
+					},
+					(Items.ItemStoneSpear.Instance, 1),
+					false)
+				);
+
+			// каменная кирка
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenStick.Instance, 12),
+						(Items.ItemCobblestone.Instance, 14),
+					},
+					(Items.ItemStonePickaxe.Instance, 1),
+					false)
+				);
+
+			// костер
+			allRecipes.Add(
+				new CraftingController.Recipe
+				(
+					new (Item, int)[]
+					{
+						(Items.ItemWoodenStick.Instance, 40),
+						(Items.ItemWoodenLog.Instance, 10),
+						(Items.ItemCobblestone.Instance, 5),
+					},
+					(Items.ItemBonfire.Instance, 1),
 					false)
 				);
 		}

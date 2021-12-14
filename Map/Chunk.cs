@@ -1,5 +1,6 @@
 ﻿using Game.Controllers;
 using Game.GameObjects;
+using Game.GameObjects.Creatures;
 using Game.Miscellaneous;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace Game.Map
 		public int x { get; private set; }
 		public int y { get; private set; }
 		public Tile[,] tiles { get; private set; }
+		private int creaturesCount;
 
 		public Chunk(int chunkX, int chunkY)
 		{
@@ -33,6 +35,7 @@ namespace Game.Map
 				{
 					tiles[_x, _y] = new Tile(_x, _y, this);
 					height = MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX, tiles[_x, _y].globalY) + 0.5f;
+					Random r = new Random((tiles[_x, _y].globalX, tiles[_x, _y].globalY).GetHashCode());
 					if (height < 0.15f)
 						height = 0;
 					else if (height < 0.3f)
@@ -42,23 +45,42 @@ namespace Game.Map
 					else if (height < 0.55f)
 					{
 						height = 3;
-						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.15f)
+						if (r.Next(100) < 3f)
 							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_palm_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
 					}
 					else if (height < 0.67f)
 					{
 						height = 4;
-						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.25f)
+						if (r.Next(100) < 1f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_small_stone_lump", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+						else
+						if (r.Next(100) < 7f)
 							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_pine_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
 					}
 					else if (height < 0.8f)
 					{
 						height = 5;
-						if (MapController.Instance.noise.GetNoise(tiles[_x, _y].globalX * 10, tiles[_x, _y].globalY * 10) + 0.5f < 0.2f)
+						if (r.Next(100) < 1f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_stone_lump", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+						else
+						if (r.Next(100) < 4f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_small_stone_lump", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+						else 
+						if (r.Next(100) < 25f)
 							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_pine_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
 					}
 					else if (height < 0.94f)
+                    {
 						height = 6;
+						if (r.Next(100) < 2f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_pine_tree", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+						else
+						if (r.Next(100) < 8f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_stone_lump", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+						else
+						if (r.Next(100) < 16f)
+							tiles[_x, _y].SetGameObject(GameObject.Spawn("obj_small_stone_lump", tiles[_x, _y].globalX, tiles[_x, _y].globalY));
+					}
 					else height = 7;
 					tiles[_x, _y].tileType = (int)height;
 					foreach (var obj in GameController.Instance.objectsQueue)
@@ -72,6 +94,7 @@ namespace Game.Map
 			SavedChunkInfo info;
 			(int x, int y) t_coords;
 			Tile tile;
+			creaturesCount = 0;
 			if ((info = GameController.Instance.savedChunks.Find(c => c.chunkX == x && c.chunkY == y)) != null)
 			{
 				int count = info.changedTiles.Count;
@@ -88,12 +111,31 @@ namespace Game.Map
 							tile.SetGameObject(null);
 					}
 					else if (t.additionalInformation[0] > 1)
-                    {
 						GameObject.Spawn(t.additionalInformation[0], tile.globalX, tile.globalY, t.additionalInformation);
-					}
 				}
 			}
 		}
+
+		public void SpawnCreatures()
+        {
+			foreach (var cr in GameController.Instance.objectsQueue.Where(o => o is Creature))
+				if (MapController.Instance.IsInChunk(cr.x, cr.y, x, y))
+					creaturesCount++;
+
+			Tile[] darkTiles = tiles.Cast<Tile>().Where(t => t.lightingLevel < 100).ToArray();
+			Random r = new Random((x, y).GetHashCode());
+			for (int i = creaturesCount; darkTiles.Length > 0 && r.Next(0, 100) < 50 && i < r.Next(0, Constants.MAX_CREATURES_SPAWN_PER_CHUNK + 1); i++)
+			{
+				// spawn wolf or bear
+				Tile tile = darkTiles[r.Next(0, Constants.CHUNK_SIZE)];
+				if (tile.gameObject == null && tile.tileType >= 3)
+				{
+					GameController.Instance.Spawn((TurnBasedObject)GameObject.Spawn(r.Next(2, 4), tile.globalX, tile.globalY));
+					creaturesCount++;
+					break;
+				}
+			}
+        }
 
 		public void UnloadChunk()
 		{

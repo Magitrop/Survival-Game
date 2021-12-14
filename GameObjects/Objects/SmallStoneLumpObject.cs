@@ -12,16 +12,16 @@ namespace Game.GameObjects
 {
     public abstract partial class GameObject
     {
-        private sealed class PineTreeObject : BreakableObject
+        private sealed class SmallStoneLumpObject : BreakableObject
         {
-            public PineTreeObject(int _x, int _y, byte[] additionalInformation = null) : 
-                base(_x, _y, 100, "obj_pine_tree", Constants.objectsSheet, additionalInformation)
+            public SmallStoneLumpObject(int _x, int _y, byte[] additionalInformation = null) :
+                base(_x, _y, 107, "obj_small_stone_lump", Constants.objectsSheet, additionalInformation)
             {
-                destRect = new Rectangle(0, 0, (int)(Constants.TILE_SIZE * 1.5f), (int)(Constants.TILE_SIZE * 2f));
-                srcRect = new Rectangle(103, 0, 24, 32);
+                destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
+                srcRect = new Rectangle(64, 16, 16, 16);
                 isDespawnable = true;
-                maxDurability = 30;
-                shouldBeBrokenWith = ToolType.Axe;
+                maxDurability = 12;
+                shouldBeBrokenWith = ToolType.Pickaxe;
                 if (additionalInformation != null && additionalInformation.Length > 1)
                     durability = additionalInformation[1];
                 else
@@ -32,8 +32,8 @@ namespace Game.GameObjects
 
             public override void Render()
             {
-                destRect.X = (int)(x * Constants.TILE_SIZE + MapController.Instance.camera.x - 0.25f * Constants.TILE_SIZE);
-                destRect.Y = (int)(y * Constants.TILE_SIZE + MapController.Instance.camera.y - 1.25f * Constants.TILE_SIZE);
+                destRect.X = (int)(x * Constants.TILE_SIZE + MapController.Instance.camera.x);
+                destRect.Y = (int)(y * Constants.TILE_SIZE + MapController.Instance.camera.y - 0.25f * Constants.TILE_SIZE);
                 GameController.Instance.Render(sprite, destRect, srcRect);
             }
 
@@ -43,9 +43,9 @@ namespace Game.GameObjects
                 if (breaker as Hero != null)
                 {
                     if (wasBrokenWith == shouldBeBrokenWith)
-                        InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance, new Random().Next(5, 11));
+                        InventoryController.Instance.ReceiveItems(Items.ItemCobblestone.Instance, new Random().Next(5, 9));
                     else
-                        InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance, new Random().Next(1, 5));
+                        InventoryController.Instance.ReceiveItems(Items.ItemCobblestone.Instance, new Random().Next(2, 5));
                 }
             }
 

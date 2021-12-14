@@ -53,6 +53,7 @@
     <Compile Include="Controllers\GameController.cs" />
     <Compile Include="Controllers\InventoryController.cs" />
     <Compile Include="Controllers\LightingController.cs" />
+    <Compile Include="Controllers\MainMenuController.cs" />
     <Compile Include="Controllers\MapController.cs" />
     <Compile Include="Controllers\UIOverlayController.cs" />
     <Compile Include="Fonts.cs" />
@@ -65,6 +66,8 @@
     <Compile Include="GameObjects\BreakableObject.cs" />
     <Compile Include="GameObjects\LightingObject.cs" />
     <Compile Include="GameObjects\Objects\ChestObject.cs" />
+    <Compile Include="GameObjects\Objects\SmallStoneLumpObject.cs" />
+    <Compile Include="GameObjects\Objects\StoneLumpObject.cs" />
     <Compile Include="GameObjects\Objects\WoodenFenceGateObject.cs" />
     <Compile Include="GameObjects\Objects\BonfireObject.cs" />
     <Compile Include="GameObjects\Objects\PalmTreeObject.cs" />

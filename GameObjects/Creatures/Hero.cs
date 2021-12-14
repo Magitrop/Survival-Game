@@ -1,6 +1,7 @@
 ﻿using Game.Controllers;
 using Game.GameObjects.Creatures;
 using Game.Interfaces;
+using Game.Miscellaneous;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,13 +14,13 @@ namespace Game.GameObjects
 {
     public abstract partial class GameObject
     {
-        private class Hero : Creature
+        public class Hero : Creature
         {
             public Hero(
                 int _x, 
                 int _y, 
                 byte[] additionalInformation = null) : 
-                base(_x, _y, 1, "creature_hero", MapController.Instance.creatureSheets["creature_hero"], additionalInformation)
+                base(_x, _y, 1, "creature_hero", Constants.creatureSheets["creature_hero"], additionalInformation)
             {
                 destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
                 srcRect = new Rectangle(0, 0, 16, 16);
@@ -32,7 +33,33 @@ namespace Game.GameObjects
 				isAlive = true;
                 damageAmount = 10;
 
+                hunger = 100;
+                thirst = 100;
+
                 Start();
+            }
+
+            public float hunger;
+            public float thirst;
+
+            public override void OnTurnStart()
+            {
+                base.OnTurnStart();
+                foreach (var item in InventoryController.Instance.GetNonEmptySlots())
+                    item.currentItem.OnTurnStart();
+                hunger = MathOperations.MoveTowards(hunger, 0, 0.35f);
+                thirst = MathOperations.MoveTowards(thirst, 0, 0.75f);
+                if (hunger < 15)
+                    DealDamage(this, null, (int)(15 - hunger));
+                if (thirst < 15)
+                    DealDamage(this, null, (int)(15 - thirst));
+            }
+
+            public override void OnTurnEnd()
+            {
+                base.OnTurnEnd();
+                foreach (var item in InventoryController.Instance.GetNonEmptySlots())
+                    item.currentItem.OnTurnEnd();
             }
 
             public override void Render()
@@ -65,6 +92,8 @@ namespace Game.GameObjects
             {
 
             }
+
+            protected override void DrawHealthbar() { }
         }
     }
 }

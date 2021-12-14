@@ -21,13 +21,13 @@ namespace Game.Miscellaneous
 	public abstract class Item
 	{
 		public interface IUsable
-        {
+		{
 			int usesLeft { get; set; }
 			void OnItemUse();
 		}
 
 		public interface IPlaceable
-        {
+		{
 			bool OnItemPlacing(Tile placeAt, GameObject sender = null);
 		}
 
@@ -38,17 +38,20 @@ namespace Game.Miscellaneous
 		public Rectangle itemSrcRect;
 
 		public virtual void OnItemReceive() { }
+		public virtual void OnTurnStart() { }
+		public virtual void OnTurnEnd() { }
+		public virtual int WhenAttackWith(int playerStartDamageAmount) { return playerStartDamageAmount; }
 	}
-    public abstract class ItemTool : Item
-    {
+	public abstract class ItemTool : Item
+	{
 		public byte efficiency;
 		public ToolType toolType;
 	}
 
-    public static class Items
-    {
+	public static class Items
+	{
 		public static Item GetItemByID(int itemID)
-        {
+		{
 			switch (itemID)
 			{
 				case 1: return ItemWoodenLog.Instance;
@@ -60,6 +63,11 @@ namespace Game.Miscellaneous
 				case 7: return ItemEmberPiece.Instance;
 				case 8: return ItemWoodenStick.Instance;
 				case 9: return ItemCobblestone.Instance;
+				case 10: return ItemStonePickaxe.Instance;
+				case 11: return ItemStoneSpear.Instance;
+				case 12: return ItemRawMeat.Instance;
+				case 13: return ItemCoconut.Instance;
+				case 14: return ItemWoodenPlanks.Instance;
 				default: return null;
 			};
 		}
@@ -76,12 +84,17 @@ namespace Game.Miscellaneous
 				case "item_ember_piece": return ItemEmberPiece.Instance;
 				case "item_wooden_stick": return ItemWoodenStick.Instance;
 				case "item_cobblestone": return ItemCobblestone.Instance;
+				case "item_stone_pickaxe": return ItemStonePickaxe.Instance;
+				case "item_stone_spear": return ItemStoneSpear.Instance;
+				case "item_raw_meat": return ItemRawMeat.Instance;
+				case "item_coconut": return ItemCoconut.Instance;
+				case "item_wooden_planks": return ItemWoodenPlanks.Instance;
 				default: return null;
 			};
 		}
 
 		public sealed class ItemWoodenLog : Item
-        {
+		{
 			// singleton
 			private ItemWoodenLog() 
 			{
@@ -100,6 +113,11 @@ namespace Game.Miscellaneous
 						instance = new ItemWoodenLog();
 					return instance;
 				}
+			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 2;
 			}
 		}
 		public sealed class ItemWoodenFence : Item, Item.IPlaceable
@@ -124,8 +142,8 @@ namespace Game.Miscellaneous
 				}
 			}
 
-            public bool OnItemPlacing(Tile placeAt, GameObject sender = null)
-            {
+			public bool OnItemPlacing(Tile placeAt, GameObject sender = null)
+			{
 				// нельзя ставить в воде
 				if (placeAt.tileType < 2)
 					return false;
@@ -276,6 +294,11 @@ namespace Game.Miscellaneous
 					return instance;
 				}
 			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 5;
+			}
 		}
 		public sealed class ItemEmberPiece : Item
 		{
@@ -320,6 +343,11 @@ namespace Game.Miscellaneous
 					return instance;
 				}
 			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 1;
+			}
 		}
 		public sealed class ItemCobblestone : Item
 		{
@@ -341,6 +369,160 @@ namespace Game.Miscellaneous
 						instance = new ItemCobblestone();
 					return instance;
 				}
+			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 1;
+			}
+		}
+		public sealed class ItemStonePickaxe : ItemTool
+		{
+			// singleton
+			private ItemStonePickaxe()
+			{
+				itemID = 10;
+				itemName = "item_stone_pickaxe";
+				itemSrcRect = new Rectangle(16 * 9, 0, 16, 16);
+				toolType = ToolType.Pickaxe;
+				efficiency = 2;
+
+				maxStackQuantity = 1;
+			}
+			private static ItemStonePickaxe instance;
+			public static ItemStonePickaxe Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemStonePickaxe();
+					return instance;
+				}
+			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 3;
+			}
+		}
+		public sealed class ItemStoneSpear : Item
+		{
+			// singleton
+			private ItemStoneSpear()
+			{
+				itemID = 11;
+				itemName = "item_stone_spear";
+				itemSrcRect = new Rectangle(16 * 10, 0, 16, 16);
+
+				maxStackQuantity = 1;
+			}
+			private static ItemStoneSpear instance;
+			public static ItemStoneSpear Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemStoneSpear();
+					return instance;
+				}
+			}
+
+			public override int WhenAttackWith(int playerStartDamageAmount)
+			{
+				return playerStartDamageAmount + 18;
+			}
+		}
+		public sealed class ItemRawMeat : Item, Item.IUsable
+		{
+			// singleton
+			private ItemRawMeat()
+			{
+				itemID = 12;
+				itemName = "item_raw_meat";
+				itemSrcRect = new Rectangle(16 * 11, 0, 16, 16);
+
+				maxStackQuantity = 100;
+			}
+			private static ItemRawMeat instance;
+			public static ItemRawMeat Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemRawMeat();
+					return instance;
+				}
+			}
+
+			public int usesLeft { get; set; }
+
+			public void OnItemUse()
+			{
+				GameObject.Hero h = (GameController.Instance.mainHero as GameObject.Hero);
+				h.hunger = MathOperations.MoveTowards(h.hunger, 100, 5);
+				h.thirst = MathOperations.MoveTowards(h.thirst, 0, 1);
+			}
+		}
+		public sealed class ItemCoconut : Item, Item.IUsable
+		{
+			// singleton
+			private ItemCoconut()
+			{
+				itemID = 13;
+				itemName = "item_coconut";
+				itemSrcRect = new Rectangle(16 * 13, 0, 16, 16);
+
+				maxStackQuantity = 100;
+			}
+			private static ItemCoconut instance;
+			public static ItemCoconut Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemCoconut();
+					return instance;
+				}
+			}
+
+			public int usesLeft { get; set; }
+
+			public void OnItemUse()
+			{
+				GameObject.Hero h = (GameController.Instance.mainHero as GameObject.Hero);
+				h.hunger = MathOperations.MoveTowards(h.hunger, 100, 1);
+				h.thirst = MathOperations.MoveTowards(h.thirst, 100, 5);
+			}
+		}
+		public sealed class ItemWoodenPlanks : Item, Item.IPlaceable
+		{
+			// singleton
+			private ItemWoodenPlanks()
+			{
+				itemID = 14;
+				itemName = "item_wooden_planks";
+				itemSrcRect = new Rectangle(16 * 14, 0, 16, 16);
+
+				maxStackQuantity = 100;
+			}
+			private static ItemWoodenPlanks instance;
+			public static ItemWoodenPlanks Instance
+			{
+				get
+				{
+					if (instance == null)
+						instance = new ItemWoodenPlanks();
+					return instance;
+				}
+			}
+
+			public int usesLeft { get; set; }
+
+			public bool OnItemPlacing(Tile placeAt, GameObject sender = null)
+			{
+				placeAt.tileType = 8;
+				MapController.Instance.GetChunk(placeAt.globalX, placeAt.globalY).UpdateTile(placeAt.x, placeAt.y);
+				return true;
 			}
 		}
 	}

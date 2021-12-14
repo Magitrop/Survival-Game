@@ -14,10 +14,20 @@ using Game.Controllers;
 
 namespace Game
 {
+	public enum GameState
+    {
+		MainMenu,
+		InGame
+    }
+
 	public sealed partial class MainWindow : Form
 	{
 		public bool gameIsRunning { get; private set; }
 		private bool continueUpdate;
+		public static GameState gameState { get; private set; }
+		public static Point mousePosition;
+		public static bool leftMouseButton;
+		public static bool rightMouseButton;
 
 		public MainWindow()
 		{
@@ -27,18 +37,31 @@ namespace Game
 			KeyDown += new KeyEventHandler(OnPress);
 			MouseDown += new MouseEventHandler(OnMouseDown);
 			MouseUp += new MouseEventHandler(OnMouseUp);
+
 			Initialize();
+
 			gameIsRunning = true;
+			SwitchGameState(GameState.MainMenu);
 			while (gameIsRunning)
 			{
 				Time.SetFrameBeginning(DateTime.Now.Ticks);
 				continueUpdate = false;
-				GameController.Instance.mousePosition = PointToClient(Cursor.Position);
+				mousePosition = PointToClient(Cursor.Position);
 
 				Refresh();
 				Application.DoEvents();
-				if (continueUpdate)
-					GameController.Instance.Update();
+
+				switch (gameState)
+				{
+					case GameState.MainMenu:
+						if (continueUpdate)
+							MainMenuController.Instance.Update();
+						break;
+					case GameState.InGame:
+						if (continueUpdate)
+							GameController.Instance.Update();
+						break;
+				}
 				if (gameIsRunning)
 					Show();
 
@@ -46,6 +69,21 @@ namespace Game
 				Time.CalculateTimeSinceStart();
 			}
 			Application.Exit();
+		}
+
+		public static void SwitchGameState(GameState toSet)
+        {
+			gameState = toSet;
+			switch (gameState)
+			{
+				case GameState.MainMenu:
+					GameController.Instance.Exit();
+					MainMenuController.Instance.Start();
+					break;
+				case GameState.InGame:
+					GameController.Instance.Start();
+					break;
+			}
 		}
 
 		private void Initialize()
@@ -58,23 +96,34 @@ namespace Game
 			Fonts.AddFontMemResourceEx(fontPtr, (uint)Properties.Resources.font_1.Length, IntPtr.Zero, ref dummy);
 			System.Runtime.InteropServices.Marshal.FreeCoTaskMem(fontPtr);
 			Fonts.font_1 = new Font(Fonts.fonts.Families[0], 32.0F, FontStyle.Bold);
-
-			GameController.Instance.Start();
 		}
 
 		private void OnPress(object sender, KeyEventArgs e)
 		{
-			GameController.Instance.OnPress(sender, e);
+			switch (gameState)
+			{
+				case GameState.MainMenu:
+					break;
+				case GameState.InGame:
+					GameController.Instance.OnPress(sender, e);
+					break;
+			}
 		}
 
 		private void OnMouseDown(object sender, MouseEventArgs e)
 		{
-			GameController.Instance.OnMouseDown(sender, e);
+			if (e.Button == MouseButtons.Left)
+				leftMouseButton = true;
+			else if (e.Button == MouseButtons.Right)
+				rightMouseButton = true;
 		}
 
 		private void OnMouseUp(object sender, MouseEventArgs e)
 		{
-			GameController.Instance.OnMouseUp(sender, e);
+			if (e.Button == MouseButtons.Left)
+				leftMouseButton = false;
+			else if (e.Button == MouseButtons.Right)
+				rightMouseButton = false;
 		}
 
 		List<PointF> points = new List<PointF>();
@@ -104,7 +153,16 @@ namespace Game
 					radius));
 				Region = new Region(g);
 			}
-			GameController.Instance.OnPaint(sender, e);
+
+			switch (gameState)
+			{
+				case GameState.MainMenu:
+					MainMenuController.Instance.OnPaint(sender, e);
+					break;
+				case GameState.InGame:
+					GameController.Instance.OnPaint(sender, e);
+					break;
+			}
 			continueUpdate = true;
 		}
 	}

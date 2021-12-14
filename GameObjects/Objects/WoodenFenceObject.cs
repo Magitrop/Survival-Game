@@ -17,7 +17,7 @@ namespace Game.GameObjects
 		private sealed class WoodenFenceObject : BreakableObject
 		{
 			public WoodenFenceObject(int _x, int _y, byte[] additionalInformation = null) : 
-				base(_x, _y, 101, "obj_wooden_fence", MapController.Instance.objectsSheet, additionalInformation)
+				base(_x, _y, 101, "obj_wooden_fence", Constants.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(16, 0, 16, 16);

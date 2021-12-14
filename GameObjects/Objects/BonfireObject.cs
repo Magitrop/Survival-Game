@@ -21,7 +21,7 @@ namespace Game.GameObjects
 			private float curAnimationTimer;
 
 			public BonfireObject(int _x, int _y, byte[] additionalInformation = null) : 
-				base(_x, _y, 103, "obj_bonfire", MapController.Instance.objectsSheet, additionalInformation)
+				base(_x, _y, 103, "obj_bonfire", Constants.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(4 * 16, 16, 16, 16);
@@ -75,7 +75,7 @@ namespace Game.GameObjects
 
 			public void InitializeAnimation()
 			{
-				Image img = MapController.Instance.objectsSheet;
+				Image img = Constants.objectsSheet;
 				float duration = 0.14f;
 				animations = new List<Animation>()
 				{

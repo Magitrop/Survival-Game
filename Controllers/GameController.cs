@@ -47,20 +47,15 @@ namespace Game.Controllers
 		/// </summary>
 		public TurnBasedObject currentObject
 		{
-			get
-			{
-				return 
-					(objectsQueue.Count > 0 && 
+			get => (objectsQueue.Count > 0 && 
 					currentObjectIndex >= 0 && 
 					currentObjectIndex < objectsQueue.Count) 
 					? objectsQueue[currentObjectIndex] 
 					: null;
-			}
 		}
 		public int currentObjectIndex;
 		public Creature mainHero;
 
-		public string currentSavePath;
 		public List<SavedChunkInfo> savedChunks;
 		public GameObject.ChestObject currentChest = null;
 		public float pause { get; private set; }
@@ -68,13 +63,12 @@ namespace Game.Controllers
 		public int currentFPS;
 		private float screenCounterFPS = 0;
 
-		public Point mousePosition;
 		public Point currentTileSelection = new Point();
-		public bool leftMouseButton;
-		public bool rightMouseButton;
 
 		private Font objectInfoFont;
 		private Brush objectInfoBrush;
+
+		private float deathTimer;
 
 		/// <summary>
 		/// Метод, вызываемый при запуске приложения.
@@ -89,7 +83,7 @@ namespace Game.Controllers
 			InventoryController.Instance.Start();
 			CraftingController.Instance.Start();
 			UIOverlayController.Instance.Start();
-			LightingController.Instance.NextDayPart();
+			LightingController.Instance.Start();
 
 			if (!LoadGame("save"))
 			{
@@ -106,13 +100,26 @@ namespace Game.Controllers
 			(MapController.Instance.camera = new Camera(mainHero.x, mainHero.y)).target = mainHero;
 			MoveHero(999999, 999999, true, false);
 			MoveHero(-999999, -999999, true, false);
-			LightingController.Instance.GenerateLighting();
+			LightingController.Instance.NextDayPart();
 
 			objectInfoFont = new Font(Fonts.fonts.Families[0], 25.0F, FontStyle.Bold);
 			objectInfoBrush = new SolidBrush(Color.Red);
 
 			currentObjectIndex = 0;
+			deathTimer = 0;
 		}
+
+		public void Exit()
+        {
+			if (MainWindow.gameState != GameState.InGame)
+				return;
+
+			savedChunks.Clear();
+			objectsQueue.Clear();
+			foreach (var chunk in MapController.Instance.visibleChunks)
+				foreach (var tile in chunk.tiles)
+					tile.SetGameObject(null);
+        }
 
 		public void NextTurn()
 		{
@@ -149,16 +156,17 @@ namespace Game.Controllers
 			if (!MainWindow.DrawWindowClosingAnimation &&
 				!(!MapController.Instance.camera.cameraFinishedMovement ||
 				currentObject != mainHero ||
-				!mainHero.isMoving) &&
+				!mainHero.finishedMoving) &&
 				InventoryController.Instance.selectedSlot == null &&
 				!InventoryController.Instance.isDraggingItem &&
-				InventoryController.Instance.displayMode ==InventoryController.InventoryDisplayMode.HotbarOnly)
+				InventoryController.Instance.displayMode ==InventoryController.InventoryDisplayMode.HotbarOnly &&
+				mainHero.isAlive)
 			{
-				double _x = (mousePosition.X - MapController.Instance.camera.x) / Constants.TILE_SIZE;
+				double _x = (MainWindow.mousePosition.X - MapController.Instance.camera.x) / Constants.TILE_SIZE;
 				if (_x < 0)
 					currentTileSelection.X = (int)Math.Truncate(_x - 1);
 				else currentTileSelection.X = (int)Math.Truncate(_x);
-				double _y = (mousePosition.Y - MapController.Instance.camera.y) / Constants.TILE_SIZE;
+				double _y = (MainWindow.mousePosition.Y - MapController.Instance.camera.y) / Constants.TILE_SIZE;
 				if (_y < 0)
 					currentTileSelection.Y = (int)Math.Truncate(_y - 1);
 				else currentTileSelection.Y = (int)Math.Truncate(_y);
@@ -186,13 +194,13 @@ namespace Game.Controllers
 
 				if ((InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable) != null)
 				{
-					Render(MapController.Instance.tilesSheet, rect, src);
+					Render(Constants.tilesSheet, rect, src);
 					// на клетке стоит нет объекта (можно строить)
 					actionsWithTile.Add(4);
 				}
 				else if (selectedTile.gameObject != null)
 				{
-					Render(MapController.Instance.tilesSheet, rect, src);
+					Render(Constants.tilesSheet, rect, src);
 					if ((selectedTile.gameObject as BreakableObject) != null &&
 						(InventoryController.Instance.currentSlot.currentItem as Item.IPlaceable) == null)
 						// на клетке стоит объект (разрушить)
@@ -232,7 +240,11 @@ namespace Game.Controllers
 				}
 			else pause -= Time.deltaTime;
 
-			if (actionsWithTile.Count > 0)
+			for (int i = 0; i < objectsQueue.Count; i++)
+				objectsQueue[i].PostRender();
+
+			if (actionsWithTile.Count > 0 &&
+				mainHero.isAlive)
             {
 				rect = new Rectangle
 				(
@@ -252,12 +264,14 @@ namespace Game.Controllers
 						3 * Constants.TEXTURE_RESOLUTION,
 						Constants.TEXTURE_RESOLUTION,
 						Constants.TEXTURE_RESOLUTION);
-				Render(MapController.Instance.tilesSheet, rect, src);
+				Render(Constants.tilesSheet, rect, src);
 			}
 
 			MapController.Instance.PostUpdate();
 
-			if (actionsWithTile.Count > 0 && InventoryController.Instance.displayMode == InventoryController.InventoryDisplayMode.HotbarOnly)
+			if (actionsWithTile.Count > 0 && 
+				InventoryController.Instance.displayMode == InventoryController.InventoryDisplayMode.HotbarOnly &&
+				mainHero.isAlive)
 			{
 				BreakableObject obj;
 				if ((obj = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y).gameObject as BreakableObject) != null &&
@@ -280,11 +294,11 @@ namespace Game.Controllers
 						Constants.TEXTURE_RESOLUTION,
 						Constants.TEXTURE_RESOLUTION
 					);
-					Render(MapController.Instance.uiSheet, rect, src);
+					Render(Constants.uiSheet, rect, src);
 
 					if (MathOperations.Distance((currentTileSelection.X, currentTileSelection.Y), mainHero.coords) < 2)
 					{
-						if (leftMouseButton)
+						if (MainWindow.leftMouseButton)
 						{
 							Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
 							switch (actionsWithTile[i])
@@ -292,11 +306,27 @@ namespace Game.Controllers
 								// атаковать
 								case 2:
 									// предполагается, что на клетке есть существо
-									if (((Creature)selectedTile.gameObject).isAlive)
-										Creature.DealDamage((Creature)selectedTile.gameObject, mainHero, mainHero.damageAmount);
+									Creature creature = selectedTile.gameObject as Creature;
+									if (creature.isAlive)
+                                    {
+										if (mainHero.actionsLeft >= 2)
+                                        {
+											Creature.DealDamage(
+											creature,
+											mainHero,
+												InventoryController.Instance.currentSlot.currentItem?.WhenAttackWith(mainHero.damageAmount) ??
+												mainHero.damageAmount);
+											mainHero.actionsLeft -= 2;
+										}
+									}
 									else
-
-									leftMouseButton = false;
+                                    {
+										foreach (var drop in creature.dropsItems)
+											InventoryController.Instance.ReceiveItems(drop.item, drop.count);
+										objectsQueue.Remove(creature);
+										selectedTile.SetGameObject(null);
+									}
+									MainWindow.leftMouseButton = false;
 									break;
 								// разрушить
 								case 3:
@@ -332,7 +362,7 @@ namespace Game.Controllers
 										obj.objectAdditionalInformation = l.ToArray();
 									}
 									selectedTile.chunk.UpdateTile(selectedTile.x, selectedTile.y);
-									leftMouseButton = false;
+									MainWindow.leftMouseButton = false;
 									break;
 								// строить
 								case 4:
@@ -343,11 +373,11 @@ namespace Game.Controllers
 												InventoryController.Instance.currentSlot,
 												InventoryController.Instance.currentSlot.currentItem, 1);
 									if (InventoryController.Instance.currentSlot.currentItem == null)
-										leftMouseButton = false;
+										MainWindow.leftMouseButton = false;
 									break;
 							}
 						}
-						else if (rightMouseButton)
+						else if (MainWindow.rightMouseButton)
 						{
 							Tile selectedTile = MapController.Instance.GetTile(currentTileSelection.X, currentTileSelection.Y);
 							switch (actionsWithTile[i])
@@ -355,7 +385,12 @@ namespace Game.Controllers
 								// войти в дверь
 								case 1:
 									// предполагается, что на клетке есть дверь
-
+									GameObject.WoodenFenceGateObject gate = selectedTile.gameObject as GameObject.WoodenFenceGateObject;
+									if (mainHero.coords.x == gate.insideHouse.X && mainHero.coords.y == gate.insideHouse.Y)
+										mainHero.MoveTo(gate.outsideHouse.X, gate.outsideHouse.Y);
+									else if (mainHero.coords.x == gate.outsideHouse.X && mainHero.coords.y == gate.outsideHouse.Y)
+										mainHero.MoveTo(gate.insideHouse.X, gate.insideHouse.Y);
+									MainWindow.rightMouseButton = false;
 									break;
 								// открыть сундук
 								case 5:
@@ -363,7 +398,7 @@ namespace Game.Controllers
 									InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.Whole;
 									currentChest?.CloseChest();
 									(selectedTile.gameObject as GameObject.ChestObject)?.OpenChest();
-									rightMouseButton = false;
+									MainWindow.rightMouseButton = false;
 									break;
 							}
 						}
@@ -374,6 +409,18 @@ namespace Game.Controllers
 			UIOverlayController.Instance.PostUpdate();
 			InventoryController.Instance.PostUpdate();
 			CraftingController.Instance.PostUpdate();
+
+			if (!mainHero.isAlive)
+            {
+				deathTimer += Time.deltaTime;
+				if (deathTimer >= 2f && deathTimer <= 5f)
+				{
+					Render(new SolidBrush(Color.Black), new Rectangle(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT));
+					Render("Ваш герой погиб", new Point((Constants.WINDOW_WIDTH - 250) / 2, (Constants.WINDOW_HEIGHT - 100) / 2), Fonts.font_1, new SolidBrush(Color.Red));
+				}
+				else if (deathTimer > 5f)
+					MainWindow.SwitchGameState(GameState.MainMenu);
+			}
 		}
 
 		public void Spawn(TurnBasedObject objectToSpawn)
@@ -391,9 +438,9 @@ namespace Game.Controllers
 		public bool LoadGame(string saveName)
 		{
 			Directory.CreateDirectory(Directory.GetCurrentDirectory() + "\\Saves");
-			if (File.Exists(currentSavePath = Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat"))
+			if (File.Exists(Directory.GetCurrentDirectory() + "\\Saves\\save.dat"))
 			{
-				var lines = File.ReadAllLines(Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat");
+				var lines = File.ReadAllLines(Directory.GetCurrentDirectory() + "\\Saves\\save.dat");
 
 				int creaturesCount = int.Parse(lines[0]);
 				for (int i = lines.Length - 1; i > 0; i--)
@@ -407,12 +454,13 @@ namespace Game.Controllers
 						{
 							int playerX = int.Parse(info[1]);
 							int playerY = int.Parse(info[2]);
-							LightingController.Instance.SetCurrentDaytime(byte.Parse(info[4]) == 0 ? (byte)23 : (byte)(byte.Parse(info[4]) - 1));
+							LightingController.Instance.SetCurrentDaytime(byte.Parse(info[5]) == 0 ? (byte)23 : (byte)(byte.Parse(info[5]) - 1));
 							LightingController.Instance.NextDayPart();
 							mainHero = (Creature)GameObject.Spawn("creature_hero", playerX, playerY);
 							mainHero.actionsLeft = int.Parse(info[3]);
+							mainHero.currentHealth = int.Parse(info[4]);
 							objectsQueue.Add(mainHero);
-							for (int j = 5; j < info.Length; j += 4)
+							for (int j = 6; j < info.Length; j += 4)
 								InventoryController.Instance.AddItemsToSlot(
 									InventoryController.Instance.GetSlotByRowAndColumn((int.Parse(info[j]), int.Parse(info[j + 1]))),
 									Items.GetItemByID(int.Parse(info[j + 2])),
@@ -420,10 +468,16 @@ namespace Game.Controllers
 						}
 						else
 						{
-							List<byte> _addInfo = new List<byte>();
+							List<int> _addInfo = new List<int>();
 							for (int j = 3; j < info.Length; j++)
-								_addInfo.Add(byte.Parse(info[j]));
-							Spawn((TurnBasedObject)GameObject.Spawn(int.Parse(info[0]), int.Parse(info[1]), int.Parse(info[2])));
+								_addInfo.Add(int.Parse(info[j]));
+							var obj = GameObject.Spawn(int.Parse(info[0]), int.Parse(info[1]), int.Parse(info[2]));
+
+							Creature c = obj as Creature;
+							if (c != null && (c.currentHealth = int.Parse(info[3])) == 0)
+								c.isAlive = false;
+
+							Spawn((TurnBasedObject)obj);
 						}
 					}
 				}
@@ -450,6 +504,7 @@ namespace Game.Controllers
 						objectsQueue[i].x + "," + 
 						objectsQueue[i].y + "," +
 						objectsQueue[i].actionsLeft + "," +
+						((Creature)objectsQueue[i]).currentHealth + "," +
 						LightingController.Instance.currentDaytime;
 					foreach (var slotColumn in InventoryController.Instance.slots)
 						foreach (var slot in slotColumn)
@@ -465,26 +520,40 @@ namespace Game.Controllers
 					saves.Add(str);
 				}
 				else
-					saves.Add(objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y);
+                {
+					string str = objectsQueue[i].objectID + "," + objectsQueue[i].x + "," + objectsQueue[i].y;
+					Creature cr = objectsQueue[i] as Creature;
+					if (cr != null)
+						str += "," + cr.currentHealth;
+					saves.Add(str);
+				}
 
 			foreach (var save in savedChunks)
 				saves.Add(save.ToString());
-			File.WriteAllLines(currentSavePath = Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat", saves);
+			File.WriteAllLines(Directory.GetCurrentDirectory() + "\\Saves\\" + saveName + ".dat", saves);
 		}
 
 		public void OnPress(object sender, KeyEventArgs e)
 		{
 			if (MainWindow.DrawWindowClosingAnimation)
 				return;
-			/*if (e.KeyCode == Keys.Escape)
-				MainWindow.DrawWindowClosingAnimation = true;*/
+
 			if (e.KeyCode == KeyBindings.ToggleGridDrawing)
 				shouldDrawGrid = !shouldDrawGrid;
+
+			if (!mainHero.isAlive)
+				return;
 
 			if (e.KeyCode >= Keys.D1 && e.KeyCode <= Keys.D9)
 				InventoryController.Instance.currentSlotIndex = (int)e.KeyCode - 49;
 			else if (e.KeyCode == Keys.D0)
 				InventoryController.Instance.currentSlotIndex = 9;
+
+			if (e.KeyCode == Keys.T)
+            {
+				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFence.Instance, 1);
+				InventoryController.Instance.ReceiveItems(Items.ItemWoodenFenceGate.Instance, 1);
+            }
 
 			if (e.KeyCode == Keys.I)
 			{
@@ -500,15 +569,25 @@ namespace Game.Controllers
 				}
 			}
 
-			if (e.KeyCode == Keys.T)
+			if (e.KeyCode == Keys.Escape)
 			{
-				InventoryController.Instance.ReceiveItems(Items.ItemWoodenLog.Instance);
-				InventoryController.Instance.ReceiveItems(Items.ItemCobblestone.Instance);
+				currentChest?.CloseChest();
+				CraftingController.Instance.displayMode = CraftingController.CraftingDisplayMode.DoNotDisplay;
+				if (InventoryController.Instance.displayMode != InventoryController.InventoryDisplayMode.HotbarOnly)
+					InventoryController.Instance.displayMode = InventoryController.InventoryDisplayMode.HotbarOnly;
+				else
+				{
+					if (MapController.Instance.camera.cameraFinishedMovement &&
+						currentObject == mainHero &&
+						mainHero.finishedMoving)
+						SaveGame("save");
+					MainWindow.SwitchGameState(GameState.MainMenu);
+				}
 			}
 
 			if (!MapController.Instance.camera.cameraFinishedMovement || 
 				currentObject != mainHero || 
-				!mainHero.isMoving ||
+				!mainHero.finishedMoving ||
 				InventoryController.Instance.displayMode != InventoryController.InventoryDisplayMode.HotbarOnly)
 				return;
 
@@ -525,19 +604,6 @@ namespace Game.Controllers
 			{
 				MoveHero(-1, 0);
 				mainHero.isFacingRight = false;
-			}
-			else if (e.KeyCode == KeyBindings.PlaceBlock)
-			{
-				Tile t;
-				//(t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1)).tileType = 1;
-				//MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
-				if ((t = MapController.Instance.GetTile(mainHero.x, mainHero.y - 1)).gameObject == null)
-				{
-					t.SetGameObject(GameObject.Spawn("obj_wooden_fence", mainHero.x, mainHero.y - 1));
-					MapController.Instance.GetChunk(mainHero.x, mainHero.y - 1).UpdateTile(t.x, t.y);
-					/*if (t.gameObject.objectName == "obj_wooden_fence")
-						t.SetGameObject(null);*/
-				}
 			}
 
 			if (e.KeyCode == Keys.Return)
@@ -576,22 +642,6 @@ namespace Game.Controllers
 			if (previousChunk != chunk)
 				MapController.Instance.RecalculateChunks(chunk.x, chunk.y);
 			MapController.Instance.camera.CameraFollow();
-		}
-
-		public void OnMouseDown(object sender, MouseEventArgs e)
-		{
-			if (e.Button == MouseButtons.Left)
-				leftMouseButton = true;
-			else if (e.Button == MouseButtons.Right)
-				rightMouseButton = true;
-		}
-
-		public void OnMouseUp(object sender, MouseEventArgs e)
-		{
-			if (e.Button == MouseButtons.Left)
-				leftMouseButton = false;
-			else if (e.Button == MouseButtons.Right)
-				rightMouseButton = false;
 		}
 
 		/// <summary>

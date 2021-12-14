@@ -21,7 +21,7 @@ namespace Game.GameObjects
 				int _x,
 				int _y,
 				byte[] additionalInformation = null) : 
-				base(_x, _y, 2, "creature_wolf", MapController.Instance.creatureSheets["creature_wolf"], additionalInformation)
+				base(_x, _y, 2, "creature_wolf", Constants.creatureSheets["creature_wolf"], additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)(Constants.TILE_SIZE * 1.5f), (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(0, 0, 24, 16);
@@ -29,9 +29,12 @@ namespace Game.GameObjects
 				canWalkOn = WalkType.GroundOnly;
 
 				maxActionsCount = 15;
-				maxHealth = currentHealth = 70;
+				maxHealth = currentHealth = 120;
 				isAlive = true;
-				damageAmount = 10;
+				damageAmount = 15;
+				sightDistance = 8;
+
+				dropsItems.Add((Items.ItemRawMeat.Instance, new Random().Next(1, 4)));
 
 				Start();
 			}
@@ -55,6 +58,7 @@ namespace Game.GameObjects
 				destRect.X = (int)((visualX - 0.25f) * Constants.TILE_SIZE + MapController.Instance.camera.x);
 				destRect.Y = (int)((visualY - 0.25f) * Constants.TILE_SIZE + MapController.Instance.camera.y);
 				GameController.Instance.Render(sprite, destRect, srcRect);
+				DrawHealthbar();
 			}
 
 			public override void Start()
@@ -71,7 +75,7 @@ namespace Game.GameObjects
 			{
 				base.OnTurnStart();
 				currentTarget = GameController.Instance.mainHero;
-				currentPath = MapController.Instance.FindPath(coords, currentTarget.coords, canWalkOn);
+				currentPath = MapController.Instance.FindPath(coords, currentTarget.coords, canWalkOn, sightDistance);
 				currentPathIndex = 0;
 			}
 
@@ -88,14 +92,14 @@ namespace Game.GameObjects
 						}
 						if (currentPath != null && currentPath.Count > 0)
                         {
+							if (currentPath[currentPathIndex].x > x)
+								isFacingRight = true;
+							else if (currentPath[currentPathIndex].x < x)
+								isFacingRight = false;
 							if (MapController.Instance.GetTile(
 								currentPath[currentPathIndex].x,
 								currentPath[currentPathIndex].y).gameObject != currentTarget)
 							{
-								if (currentPath[currentPathIndex].x > x)
-									isFacingRight = true;
-								else if (currentPath[currentPathIndex].x < x)
-									isFacingRight = false;
 								if (MoveTo(currentPath[currentPathIndex].x, currentPath[currentPathIndex].y))
 								{
 									if (isVisible)
@@ -118,6 +122,27 @@ namespace Game.GameObjects
 			public override void PostUpdate()
 			{
 
+			}
+
+			public override void PostRender()
+			{
+				if (isAlive)
+					DrawHealthbar();
+			}
+
+			protected override void DrawHealthbar()
+			{
+				healthBarDest.X = healthCount.X = (int)(visualX * Constants.TILE_SIZE + MapController.Instance.camera.x);
+				healthBarDest.Y = healthCount.Y = (int)((visualY - 0.6f) * Constants.TILE_SIZE + MapController.Instance.camera.y);
+				healthCount.Width = (int)(healthBarDest.Width / 100f * Math.Min(currentHealth * 100f / maxHealth, 100));
+				GameController.Instance.Render(
+					Constants.uiSheet,
+					healthBarDest,
+					backgroundBarSrc);
+				GameController.Instance.Render(
+					Constants.uiSheet,
+					healthCount,
+					healthBarSrc);
 			}
 		}
     }

@@ -40,7 +40,7 @@ namespace Game.Controllers
 		/// <summary>
 		/// Текущее время суток (в часах).
 		/// </summary>
-		public byte currentDaytime { get; private set; } = 12;
+		public byte currentDaytime { get; private set; }
 
 		public List<LightingObject> lightingObjects = new List<LightingObject>();
 		public Brush[] lightingBrushes;
@@ -49,6 +49,11 @@ namespace Game.Controllers
         {
 			currentDaytime = (byte)(newDaytime % 24);
 			GenerateLighting();
+        }
+
+		public void Start()
+        {
+			currentDaytime = 11;
         }
 
 		public void GenerateLighting()
@@ -77,7 +82,7 @@ namespace Game.Controllers
 			switch (currentDaytime)
             {
 				case 0:
-					ambientLightingLevel = 30;
+					ambientLightingLevel = 40;
 					lightingColor = Color.FromArgb(ambientLightingLevel, 0, 0, 30);
 					break;
 				case 1:

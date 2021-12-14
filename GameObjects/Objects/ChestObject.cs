@@ -18,7 +18,7 @@ namespace Game.GameObjects
 			public List<(InventoryController.Slot slot, Item item, int count)> container = new List<(InventoryController.Slot slot, Item item, int count)>();
 
 			public ChestObject(int _x, int _y, byte[] additionalInformation = null) :
-				base(_x, _y, 104, "obj_chest", MapController.Instance.objectsSheet, additionalInformation)
+				base(_x, _y, 104, "obj_chest", Constants.objectsSheet, additionalInformation)
 			{
 				destRect = new Rectangle(0, 0, (int)Constants.TILE_SIZE, (int)Constants.TILE_SIZE);
 				srcRect = new Rectangle(4 * 16, 0, 16, 16);
